@@ -7,35 +7,52 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
   shouldAnimate: true,
 });
 
-// Santa position path
-const santaPath = new Cesium.SampledPositionProperty();
-const start = Cesium.JulianDate.now();
+// ----------------------------
+// CONFIG
+// ----------------------------
+const MIN_STOPS = 300;
+const MAX_STOPS = 500;
+const FLIGHT_HEIGHT = 300000; // meters
+const TOTAL_DURATION_SECONDS = 24 * 60 * 60; // 24 hours
 
-// Starting point (North Pole)
+// Random number of stops
+const stops = Math.floor(
+  Math.random() * (MAX_STOPS - MIN_STOPS + 1) + MIN_STOPS
+);
+
+// Time per stop
+const secondsPerStop = TOTAL_DURATION_SECONDS / stops;
+
+// ----------------------------
+// Generate Santa's Route
+// ----------------------------
+const santaPath = new Cesium.SampledPositionProperty();
+const startTime = Cesium.JulianDate.now();
+
+// Start at North Pole
 let lat = 90;
 let lon = 0;
-const height = 300000;
 
-for (let i = 0; i <= 72; i++) {
+for (let i = 0; i < stops; i++) {
   const time = Cesium.JulianDate.addSeconds(
-    start,
-    i * 10,
+    startTime,
+    i * secondsPerStop,
     new Cesium.JulianDate()
   );
 
-  lon += 5;
-  lat -= 2;
-
-  if (lon > 180) lon = -180;
-  if (lat < -60) lat = 60;
+  // Bias toward populated latitudes
+  lat = Cesium.Math.lerp(-60, 70, Math.random());
+  lon = Cesium.Math.lerp(-180, 180, Math.random());
 
   santaPath.addSample(
     time,
-    Cesium.Cartesian3.fromDegrees(lon, lat, height)
+    Cesium.Cartesian3.fromDegrees(lon, lat, FLIGHT_HEIGHT)
   );
 }
 
-// Santa entity as a red dot
+// ----------------------------
+// Santa Entity (Red Dot)
+// ----------------------------
 const santa = viewer.entities.add({
   position: santaPath,
   point: {
@@ -45,22 +62,34 @@ const santa = viewer.entities.add({
     outlineWidth: 1,
     disableDepthTestDistance: Number.POSITIVE_INFINITY,
   },
+  label: {
+    text: "🎅 Santa",
+    font: "14px sans-serif",
+    fillColor: Cesium.Color.WHITE,
+    pixelOffset: new Cesium.Cartesian2(0, -20),
+  },
 });
 
-// Optional flight path line
+// Optional flight path
 viewer.entities.add({
   polyline: {
     positions: santaPath,
     width: 2,
-    material: Cesium.Color.RED.withAlpha(0.6),
+    material: Cesium.Color.RED.withAlpha(0.5),
   },
 });
 
 viewer.trackedEntity = santa;
 
-// Clock setup
-viewer.clock.startTime = start.clone();
-viewer.clock.stopTime = Cesium.JulianDate.addSeconds(start, 720, new Cesium.JulianDate());
-viewer.clock.currentTime = start.clone();
-viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
-viewer.clock.multiplier = 1;
+// ----------------------------
+// Clock (24-hour real-time run)
+// ----------------------------
+viewer.clock.startTime = startTime.clone();
+viewer.clock.stopTime = Cesium.JulianDate.addSeconds(
+  startTime,
+  TOTAL_DURATION_SECONDS,
+  new Cesium.JulianDate()
+);
+viewer.clock.currentTime = startTime.clone();
+viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+viewer.clock.multiplier = 1; // REAL TIME (24 hours)
