@@ -93,3 +93,69 @@ viewer.clock.stopTime = Cesium.JulianDate.addSeconds(
 viewer.clock.currentTime = startTime.clone();
 viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
 viewer.clock.multiplier = 1; // REAL TIME (24 hours)
+
+let lastModeSwitch = 0;
+let cinematicMode = "WIDE";
+
+viewer.scene.postRender.addEventListener(() => {
+  const time = viewer.clock.currentTime;
+  const position = santa.position.getValue(time);
+  if (!position) return;
+
+  const camera = viewer.camera;
+
+  // Switch camera style every ~45 seconds
+  const seconds = Cesium.JulianDate.secondsDifference(time, viewer.clock.startTime);
+  if (seconds - lastModeSwitch > 45) {
+    cinematicMode = cinematicMode === "WIDE" ? "CLOSE" : "WIDE";
+    lastModeSwitch = seconds;
+  }
+
+  // Convert Santa position
+  const carto = Cesium.Cartographic.fromCartesian(position);
+  const height = carto.height;
+
+  let distance;
+  let offset;
+
+  if (cinematicMode === "WIDE") {
+    // 🌍 Epic globe shot
+    distance = Cesium.Math.clamp(height * 10, 3_000_000, 8_000_000);
+    offset = new Cesium.Cartesian3(
+      -distance * 0.8,
+      distance * 0.4,
+      distance * 0.6
+    );
+  } else {
+    // 🎅 Close tracking shot
+    distance = Cesium.Math.clamp(height * 4, 800_000, 2_500_000);
+    offset = new Cesium.Cartesian3(
+      -distance,
+      0,
+      distance * 0.3
+    );
+  }
+
+  // Smooth camera movement
+  camera.lookAt(
+    position,
+    Cesium.Cartesian3.lerp(
+      camera.positionWC,
+      offset,
+      0.03,
+      new Cesium.Cartesian3()
+    )
+  );
+});
+
+let driftAngle = 0;
+
+viewer.scene.postRender.addEventListener(() => {
+  driftAngle += 0.0005;
+
+  const camera = viewer.camera;
+  camera.roll = Math.sin(driftAngle) * 0.002;
+});
+
+
+
