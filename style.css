@@ -1,1 +1,25 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: #0b3d91;
+  color: white;
+}
+
+#info {
+  background: rgba(0,0,0,0.3);
+  padding: 20px;
+  margin: 20px auto;
+  width: 300px;
+  border-radius: 10px;
+}
+
+#map {
+  height: 300px;
+  width: 80%;
+  margin: auto;
+  background: white;
+  color: black;
+  border-radius: 10px;
+  line-height: 300px;
+}
 
