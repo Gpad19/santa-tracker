@@ -7,10 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         html, body, #cesiumContainer {
-            width: 100%; 
-            height: 100%; 
-            margin: 0; 
-            padding: 0; 
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
         }
         .label {
@@ -31,27 +31,20 @@
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
-    // Cesium Ion token
+    // Use Cesium Ion token (needed for CesiumJS core)
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-    // Minimal viewer for iPad compatibility
+    // Initialize viewer for iPad compatibility
     const viewer = new Cesium.Viewer('cesiumContainer', {
-        scene3DOnly: true,           // ensures WebGL1 fallback works
+        imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+            url: 'https://a.tile.openstreetmap.org/'
+        }),
         baseLayerPicker: false,
         timeline: false,
         animation: false,
-        infoBox: false,
-        selectionIndicator: false,
+        scene3DOnly: true,
         shouldAnimate: true
     });
-
-    // Use Bing imagery to avoid terrain issues
-    viewer.imageryLayers.removeAll();
-    viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
-        url: 'https://dev.virtualearth.net',
-        key: 'YOUR_BING_MAPS_KEY',
-        mapStyle: Cesium.BingMapsStyle.AERIAL
-    }));
 
     // Santa entity
     const santa = viewer.entities.add({
@@ -71,7 +64,7 @@
         }
     });
 
-    // Simple Santa path
+    // Santa flight path (simple example)
     const santaPath = [
         [-100, 40],
         [-50, 50],
@@ -90,6 +83,7 @@
         viewer.flyTo(santa, { duration: 1.5 });
     }
 
+    // Move Santa every 2 seconds
     setInterval(moveSanta, 2000);
 
     // Touch-friendly camera
@@ -99,10 +93,8 @@
     viewer.scene.screenSpaceCameraController.enableTilt = true;
     viewer.scene.screenSpaceCameraController.enableLook = true;
 
-    // Resize handling for iPad
-    window.addEventListener('resize', function() {
-        viewer.resize();
-    });
+    // Handle iPad resize
+    window.addEventListener('resize', () => viewer.resize());
 </script>
 </body>
 </html>
