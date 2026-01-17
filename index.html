@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - iPad Friendly Sleigh</title>
+<title>Santa Tracker - Red Dot</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -31,16 +31,13 @@ html, body, #cesiumContainer {
 }
 
 #title { font-weight: 600; margin-bottom: 6px; font-size: 16px; }
-
 #snapButton {
   margin-top: 6px;
   padding: 6px 12px;
   background: #ff2d2d;
   border: none;
   border-radius: 6px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
+  color: white; font-weight: 600; cursor: pointer;
 }
 #snapButton:hover { background: #ff5252; }
 </style>
@@ -59,11 +56,9 @@ html, body, #cesiumContainer {
 </div>
 
 <script>
-Cesium.Ion.defaultAccessToken = "PASTE_YOUR_CESIUM_TOKEN_HERE";
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
-// -------------------------
 // Route data
-// -------------------------
 const ROUTE = [
   { country: "New Zealand", cities: [["Auckland",-36.8,174.8],["Wellington",-41.3,174.8]] },
   { country: "Australia", cities: [["Sydney",-33.9,151.2],["Melbourne",-37.8,144.9]] },
@@ -90,34 +85,24 @@ ROUTE.forEach(country => {
 document.getElementById("stops").textContent = stops.length;
 
 // -------------------------
-// Initialize Cesium
-// -------------------------
 (function initCesium() {
 
   const viewer = new Cesium.Viewer("cesiumContainer", {
-    timeline: false,
-    animation: false,
-    baseLayerPicker: false,
-    geocoder: false,
-    homeButton: false,
-    sceneModePicker: false,
-    fullscreenButton: false,
-    navigationHelpButton: false,
-    shouldAnimate: true
+    timeline: false, animation: false, baseLayerPicker: false,
+    geocoder: false, homeButton: false, sceneModePicker: false,
+    fullscreenButton: false, navigationHelpButton: false, shouldAnimate: true
   });
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
 
-  // -------------------------
   // Santa path
-  // -------------------------
   const path = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
   const secondsPerStop = 24*60*60 / stops.length;
 
-  stops.forEach((stop,i)=>{
-    const time = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
-    path.addSample(time,Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT));
+  stops.forEach((stop, i) => {
+    const t = Cesium.JulianDate.addSeconds(startTime, i*secondsPerStop, new Cesium.JulianDate());
+    path.addSample(t, Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT));
 
     // Stop marker
     stop.entity = viewer.entities.add({
@@ -126,23 +111,13 @@ document.getElementById("stops").textContent = stops.length;
     });
   });
 
-  // -------------------------
-  // Santa sleigh model
-  // -------------------------
+  // Red dot for Santa
   const santa = viewer.entities.add({
     position: path,
-    model: {
-        uri: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sleigh/glTF/Sleigh.gltf',
-        minimumPixelSize: 50,
-        maximumScale: 1.0,
-        scale: 50
-    },
-    orientation: new Cesium.VelocityOrientationProperty(path)
+    point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY }
   });
 
-  // -------------------------
   // Clock
-  // -------------------------
   viewer.clock.startTime = startTime.clone();
   viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,24*60*60,new Cesium.JulianDate());
   viewer.clock.currentTime = startTime.clone();
@@ -150,35 +125,27 @@ document.getElementById("stops").textContent = stops.length;
   viewer.clock.multiplier = 1;
   viewer.trackedEntity = santa;
 
-  // -------------------------
   // Free camera
-  // -------------------------
   const c = viewer.scene.screenSpaceCameraController;
-  c.enableRotate = true;
-  c.enableZoom = true;
-  c.enableTranslate = true;
-  c.enableTilt = true;
-  c.enableLook = true;
+  c.enableRotate = true; c.enableZoom = true;
+  c.enableTranslate = true; c.enableTilt = true; c.enableLook = true;
 
   const initialPos = santa.position.getValue(startTime);
   viewer.camera.lookAt(initialPos,new Cesium.Cartesian3(-800000,0,40000));
 
-  // Snap button
-  document.getElementById("snapButton").addEventListener("click",()=>{
+  // Snap to Santa
+  document.getElementById("snapButton").addEventListener("click", () => {
     const pos = santa.position.getValue(viewer.clock.currentTime);
-    if(!pos) return;
+    if (!pos) return;
     viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000),{duration:1.5});
   });
 
-  // -------------------------
   // Cinematic orbit
-  // -------------------------
   let orbitAngle = 0;
   viewer.scene.postRender.addEventListener(()=>{
-    if(!viewer.scene.screenSpaceCameraController.inertiaSpin){
-      const time = viewer.clock.currentTime;
-      const pos = santa.position.getValue(time);
-      if(!pos) return;
+    if (!viewer.scene.screenSpaceCameraController.inertiaSpin) {
+      const pos = santa.position.getValue(viewer.clock.currentTime);
+      if (!pos) return;
       orbitAngle += 0.001;
       const offset = new Cesium.Cartesian3(
         -800000*Math.cos(orbitAngle),
@@ -192,48 +159,26 @@ document.getElementById("stops").textContent = stops.length;
     }
   });
 
-  // -------------------------
   // Track visited stops
-  // -------------------------
-  let visitedStops = new Set();
+  let visited = new Set();
   viewer.clock.onTick.addEventListener(()=>{
-    const time = viewer.clock.currentTime;
-    const santaPos = santa.position.getValue(time);
-
+    const santaPos = santa.position.getValue(viewer.clock.currentTime);
     stops.forEach((stop,index)=>{
       const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT);
-      if(santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000){
-        if(!visitedStops.has(index)){
-          visitedStops.add(index);
+      if (santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000) {
+        if(!visited.has(index)){
+          visited.add(index);
           stop.entity.point.color = Cesium.Color.LIME;
           stop.entity.point.pixelSize = 7;
         }
       }
     });
 
-    const lastVisitedIndex = Math.max(...Array.from(visitedStops),0);
-    const lastStop = stops[lastVisitedIndex];
-    document.getElementById("visited").textContent = visitedStops.size;
-    if(lastStop){
-      document.getElementById("country").textContent = lastStop.country;
-      document.getElementById("city").textContent = lastStop.name;
-    }
-
-    // -------------------------
-    // Sleigh tilt when turning
-    // -------------------------
-    if(santaPos){
-      const deltaTime = 1;
-      const futureTime = Cesium.JulianDate.addSeconds(time, deltaTime, new Cesium.JulianDate());
-      const futurePos = path.getValue(futureTime);
-      if(futurePos){
-        const forward = Cesium.Cartesian3.subtract(futurePos, santaPos, new Cesium.Cartesian3());
-        const right = Cesium.Cartesian3.cross(forward, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
-        const roll = Cesium.Math.clamp(Cesium.Cartesian3.magnitude(right)/200000, -0.4, 0.4);
-        const hpr = Cesium.HeadingPitchRoll.fromQuaternion(Cesium.Quaternion.IDENTITY);
-        hpr.roll = roll;
-        santa.orientation = Cesium.Transforms.headingPitchRollQuaternion(santaPos, hpr);
-      }
+    document.getElementById("visited").textContent = visited.size;
+    const last = stops[Math.max(...Array.from(visited),0)];
+    if (last) {
+      document.getElementById("country").textContent = last.country;
+      document.getElementById("city").textContent = last.name;
     }
   });
 
