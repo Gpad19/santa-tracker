@@ -26,16 +26,12 @@ html, body, #cesiumContainer {
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
-// Cesium Ion token (needed for core Cesium)
+// --- REQUIRED: Cesium Ion token ---
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-// Initialize Cesium viewer
+// Initialize viewer with Cesium Ion imagery (CORS-enabled)
 const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        url: 'https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png',
-        credit: 'Map tiles by Stamen Design, OpenStreetMap contributors',
-        crossOrigin: 'anonymous'
-    }),
+    imageryProvider: Cesium.createWorldImagery(), // Ion imagery
     baseLayerPicker: false,
     timeline: false,
     animation: false,
@@ -43,14 +39,14 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     shouldAnimate: true
 });
 
-// Smooth Santa path: a continuous path around the globe
+// Create a smooth Santa flight path
 const santaPathCoordinates = [];
 for (let lon = -180; lon <= 180; lon += 2) {
-    const lat = 30 * Math.sin((lon / 180) * Math.PI); // just a wavy flight path
+    const lat = 30 * Math.sin((lon / 180) * Math.PI); // wavy path
     santaPathCoordinates.push([lon, lat]);
 }
 
-// Create a Cesium SampledPositionProperty for smooth animation
+// Create a SampledPositionProperty for smooth animation
 const santaPosition = new Cesium.SampledPositionProperty();
 const startTime = Cesium.JulianDate.now();
 santaPathCoordinates.forEach((coord, i) => {
@@ -86,7 +82,7 @@ const santa = viewer.entities.add({
     }
 });
 
-// Make camera follow Santa smoothly
+// Camera follows Santa
 viewer.trackedEntity = santa;
 
 // Touch-friendly camera
@@ -96,7 +92,7 @@ viewer.scene.screenSpaceCameraController.enableZoom = true;
 viewer.scene.screenSpaceCameraController.enableTilt = true;
 viewer.scene.screenSpaceCameraController.enableLook = true;
 
-// Resize handling
+// Handle iPad resize
 window.addEventListener('resize', () => viewer.resize());
 </script>
 </body>
