@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker</title>
+<title>Santa Tracker - Free Camera</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -39,7 +39,6 @@ html, body, #cesiumContainer {
 
 <body>
 <div id="cesiumContainer"></div>
-
 <div id="hud">
   <div id="title">🎅 Santa Tracker</div>
   <div>Stops: <span id="stops">—</span></div>
@@ -49,22 +48,9 @@ html, body, #cesiumContainer {
 </div>
 
 <script>
-/* =========================
-   CESIUM TOKEN
-========================= */
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+const BING_KEY = "PASTE_YOUR_BING_MAPS_KEY_HERE";
 
-/* =========================
-   CONFIG
-========================= */
-const TOTAL_SECONDS = 24 * 60 * 60; // 24 hours
-const TOTAL_STOPS = 360;
-const FLIGHT_HEIGHT = 40000; // ⭐ LOWER ALTITUDE (40 km)
-
-/* =========================
-   COUNTRY-BASED ROUTE
-   (east → west, like NORAD)
-========================= */
 const ROUTE = [
   { country: "New Zealand", cities: [["Auckland",-36.8,174.8],["Wellington",-41.3,174.8]] },
   { country: "Australia", cities: [["Sydney",-33.9,151.2],["Melbourne",-37.8,144.9]] },
@@ -74,139 +60,93 @@ const ROUTE = [
   { country: "UAE", cities: [["Dubai",25.2,55.3]] },
   { country: "Egypt", cities: [["Cairo",30.0,31.2]] },
   { country: "France", cities: [["Paris",48.9,2.4]] },
-  { country: "United Kingdom", cities: [["London",51.5,-0.1]] },
+  { country: "UK", cities: [["London",51.5,-0.1]] },
   { country: "Canada", cities: [["Toronto",43.7,-79.4],["Vancouver",49.3,-123.1]] },
-  { country: "United States", cities: [["New York",40.7,-74.0],["Chicago",41.9,-87.6],["Denver",39.7,-105.0],["Los Angeles",34.0,-118.2]] },
+  { country: "USA", cities: [["New York",40.7,-74.0],["Chicago",41.9,-87.6],["Denver",39.7,-105.0],["Los Angeles",34.0,-118.2]] },
   { country: "Mexico", cities: [["Mexico City",19.4,-99.1]] }
 ];
 
+const TOTAL_SECONDS = 24 * 60 * 60;
+const TOTAL_STOPS = 360;
+const FLIGHT_HEIGHT = 40000;
 document.getElementById("stops").textContent = TOTAL_STOPS;
 
-/* =========================
-   VIEWER
-========================= */
-const viewer = new Cesium.Viewer("cesiumContainer", {
-  animation: false,
-  timeline: false,
-  baseLayerPicker: false,
-  geocoder: false,
-  homeButton: false,
-  sceneModePicker: false,
-  navigationHelpButton: false,
-  fullscreenButton: false,
-  shouldAnimate: true
-});
-
-viewer.scene.globe.depthTestAgainstTerrain = false;
-viewer.camera.percentageChanged = 0.005;
-viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
-
-/* =========================
-   BUILD ROUTE
-========================= */
-const path = new Cesium.SampledPositionProperty();
-const startTime = Cesium.JulianDate.now();
-const secondsPerStop = TOTAL_SECONDS / TOTAL_STOPS;
-
-let routeIndex = 0;
-
-for (let i = 0; i < TOTAL_STOPS; i++) {
-  const country = ROUTE[routeIndex % ROUTE.length];
-  const city = country.cities[i % country.cities.length];
-
-  const time = Cesium.JulianDate.addSeconds(
-    startTime,
-    i * secondsPerStop,
-    new Cesium.JulianDate()
+(async function initCesium() {
+  const bing = await Cesium.BingMapsImageryProvider.fromUrl(
+    "https://dev.virtualearth.net",
+    { key: BING_KEY, mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS_ON_DEMAND }
   );
 
-  path.addSample(
-    time,
-    Cesium.Cartesian3.fromDegrees(city[2], city[1], FLIGHT_HEIGHT)
-  );
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+    imageryProvider: bing,
+    baseLayerPicker: false,
+    timeline: false,
+    animation: false,
+    geocoder: false,
+    homeButton: false,
+    sceneModePicker: false,
+    fullscreenButton: false,
+    navigationHelpButton: false,
+    shouldAnimate: true
+  });
 
-  if (i % Math.floor(TOTAL_STOPS / ROUTE.length) === 0) {
-    routeIndex++;
-  }
-}
+  viewer.scene.globe.depthTestAgainstTerrain = false;
 
-/* =========================
-   SANTA (RED DOT)
-========================= */
-const santa = viewer.entities.add({
-  position: path,
-  point: {
-    pixelSize: 10,
-    color: Cesium.Color.RED,
-    outlineColor: Cesium.Color.WHITE,
-    outlineWidth: 1,
-    disableDepthTestDistance: Number.POSITIVE_INFINITY
-  }
-});
+  const path = new Cesium.SampledPositionProperty();
+  const startTime = Cesium.JulianDate.now();
+  const secondsPerStop = TOTAL_SECONDS / TOTAL_STOPS;
+  let routeIndex = 0;
 
-viewer.trackedEntity = santa;
-
-/* =========================
-   CLOCK
-========================= */
-viewer.clock.startTime = startTime.clone();
-viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime, TOTAL_SECONDS, new Cesium.JulianDate());
-viewer.clock.currentTime = startTime.clone();
-viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
-viewer.clock.multiplier = 1;
-
-/* =========================
-   CINEMATIC CAMERA
-========================= */
-let mode = "WIDE";
-let lastSwitch = 0;
-
-viewer.scene.postRender.addEventListener(() => {
-  const time = viewer.clock.currentTime;
-  const pos = santa.position.getValue(time);
-  if (!pos) return;
-
-  const elapsed = Cesium.JulianDate.secondsDifference(time, startTime);
-
-  if (elapsed - lastSwitch > 45) {
-    mode = mode === "WIDE" ? "CLOSE" : "WIDE";
-    lastSwitch = elapsed;
+  for (let i = 0; i < TOTAL_STOPS; i++) {
+    const country = ROUTE[routeIndex % ROUTE.length];
+    const city = country.cities[i % country.cities.length];
+    const time = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
+    path.addSample(time,Cesium.Cartesian3.fromDegrees(city[2],city[1],FLIGHT_HEIGHT));
+    if(i % Math.floor(TOTAL_STOPS/ROUTE.length) === 0) routeIndex++;
   }
 
-  const height = Cesium.Cartographic.fromCartesian(pos).height;
-  const dist = mode === "WIDE"
-    ? Cesium.Math.clamp(height * 18, 2_000_000, 6_000_000)
-    : Cesium.Math.clamp(height * 8, 700_000, 2_000_000);
+  const santa = viewer.entities.add({
+    position: path,
+    point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY }
+  });
 
-  viewer.camera.lookAt(
-    pos,
-    new Cesium.Cartesian3(-dist, dist * 0.4, dist * 0.6)
-  );
-});
+  viewer.clock.startTime = startTime.clone();
+  viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime, TOTAL_SECONDS, new Cesium.JulianDate());
+  viewer.clock.currentTime = startTime.clone();
+  viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+  viewer.clock.multiplier = 1;
 
-/* =========================
-   HUD UPDATES
-========================= */
-viewer.clock.onTick.addEventListener(() => {
-  const elapsed = Cesium.JulianDate.secondsDifference(
-    viewer.clock.currentTime,
-    startTime
-  );
+  viewer.trackedEntity = santa; // initial tracking
 
-  const visited = Math.min(Math.floor(elapsed / secondsPerStop), TOTAL_STOPS);
-  document.getElementById("visited").textContent = visited;
+  // =========================
+  // Camera free movement
+  // =========================
+  // Enable rotation, zoom, pan around red dot
+  viewer.scene.screenSpaceCameraController.enableRotate = true;
+  viewer.scene.screenSpaceCameraController.enableZoom = true;
+  viewer.scene.screenSpaceCameraController.enableTranslate = true;
+  viewer.scene.screenSpaceCameraController.enableTilt = true;
+  viewer.scene.screenSpaceCameraController.enableLook = true;
 
-  const routePos = Math.min(
-    Math.floor((visited / TOTAL_STOPS) * ROUTE.length),
-    ROUTE.length - 1
-  );
+  // Optional: initial camera offset so Santa is in view
+  const initialPos = santa.position.getValue(startTime);
+  viewer.camera.lookAt(initialPos,new Cesium.Cartesian3(-800000, 0, 40000));
 
-  const country = ROUTE[routePos];
-  const city = country.cities[visited % country.cities.length];
+  // =========================
+  // HUD updates
+  // =========================
+  viewer.clock.onTick.addEventListener(()=>{
+    const elapsed = Cesium.JulianDate.secondsDifference(viewer.clock.currentTime,startTime);
+    const visited = Math.min(Math.floor(elapsed / secondsPerStop), TOTAL_STOPS);
+    document.getElementById("visited").textContent = visited;
+    const routePos = Math.min(Math.floor((visited / TOTAL_STOPS)*ROUTE.length),ROUTE.length-1);
+    const country = ROUTE[routePos];
+    const city = country.cities[visited % country.cities.length];
+    document.getElementById("country").textContent = country.country;
+    document.getElementById("city").textContent = city[0];
+  });
 
-  document.getElementById("country").textContent = country.country;
-  document.getElementById("city").textContent = city[0];
-});
+})();
 </script>
 </body>
 </html>
