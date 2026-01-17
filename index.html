@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Free Camera</title>
+<title>Santa Tracker - Cinematic Free Camera</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -82,16 +82,13 @@ const ROUTE = [
   { country: "Mexico", cities: [["Mexico City",19.4,-99.1]] }
 ];
 
-const TOTAL_SECONDS = 24 * 60 * 60;
+const TOTAL_SECONDS = 24*60*60;
 const TOTAL_STOPS = 360;
 const FLIGHT_HEIGHT = 40000;
 document.getElementById("stops").textContent = TOTAL_STOPS;
 
 (function initCesium() {
 
-  // =========================
-  // Create viewer with default Cesium imagery
-  // =========================
   const viewer = new Cesium.Viewer("cesiumContainer", {
     timeline: false,
     animation: false,
@@ -106,15 +103,13 @@ document.getElementById("stops").textContent = TOTAL_STOPS;
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
 
-  // =========================
-  // Build Santa's path
-  // =========================
+  // Build path
   const path = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
   const secondsPerStop = TOTAL_SECONDS / TOTAL_STOPS;
   let routeIndex = 0;
 
-  for (let i = 0; i < TOTAL_STOPS; i++) {
+  for (let i=0;i<TOTAL_STOPS;i++){
     const country = ROUTE[routeIndex % ROUTE.length];
     const city = country.cities[i % country.cities.length];
     const time = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
@@ -122,22 +117,21 @@ document.getElementById("stops").textContent = TOTAL_STOPS;
     if(i % Math.floor(TOTAL_STOPS/ROUTE.length) === 0) routeIndex++;
   }
 
+  // Santa
   const santa = viewer.entities.add({
     position: path,
     point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY }
   });
 
   viewer.clock.startTime = startTime.clone();
-  viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime, TOTAL_SECONDS, new Cesium.JulianDate());
+  viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,TOTAL_SECONDS,new Cesium.JulianDate());
   viewer.clock.currentTime = startTime.clone();
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
   viewer.clock.multiplier = 1;
 
   viewer.trackedEntity = santa;
 
-  // =========================
-  // Free camera controls
-  // =========================
+  // Free camera
   const c = viewer.scene.screenSpaceCameraController;
   c.enableRotate = true;
   c.enableZoom = true;
@@ -145,30 +139,50 @@ document.getElementById("stops").textContent = TOTAL_STOPS;
   c.enableTilt = true;
   c.enableLook = true;
 
-  // Initial camera offset
+  // Initial camera
   const initialPos = santa.position.getValue(startTime);
   viewer.camera.lookAt(initialPos,new Cesium.Cartesian3(-800000,0,40000));
 
-  // =========================
-  // Snap Back to Santa Button
-  // =========================
+  // Snap button
   const snapBtn = document.getElementById("snapButton");
-  snapBtn.addEventListener("click", () => {
+  snapBtn.addEventListener("click",()=>{
     const santaPos = santa.position.getValue(viewer.clock.currentTime);
-    if (!santaPos) return;
-    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(santaPos, 40000), {
-      duration: 1.5
-    });
+    if(!santaPos) return;
+    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(santaPos,40000),{duration:1.5});
   });
 
-  // =========================
-  // HUD updates
-  // =========================
+  // Cinematic orbit variables
+  let orbitAngle = 0;
+
+  viewer.scene.postRender.addEventListener(()=>{
+    // Only auto-move camera if user is NOT interacting
+    if (!viewer.scene.screenSpaceCameraController.inertiaSpin) {
+      const time = viewer.clock.currentTime;
+      const santaPos = santa.position.getValue(time);
+      if (!santaPos) return;
+
+      orbitAngle += 0.001; // slow orbit
+
+      const offset = new Cesium.Cartesian3(
+        -800000*Math.cos(orbitAngle),
+        -800000*Math.sin(orbitAngle),
+        40000
+      );
+
+      // Smooth fly with lerp
+      viewer.camera.lookAt(
+        santaPos,
+        Cesium.Cartesian3.lerp(viewer.camera.positionWC, offset, 0.03, new Cesium.Cartesian3())
+      );
+    }
+  });
+
+  // HUD
   viewer.clock.onTick.addEventListener(()=>{
     const elapsed = Cesium.JulianDate.secondsDifference(viewer.clock.currentTime,startTime);
-    const visited = Math.min(Math.floor(elapsed / secondsPerStop),TOTAL_STOPS);
+    const visited = Math.min(Math.floor(elapsed/secondsPerStop),TOTAL_STOPS);
     document.getElementById("visited").textContent = visited;
-    const routePos = Math.min(Math.floor((visited / TOTAL_STOPS)*ROUTE.length),ROUTE.length-1);
+    const routePos = Math.min(Math.floor((visited/TOTAL_STOPS)*ROUTE.length),ROUTE.length-1);
     const country = ROUTE[routePos];
     const city = country.cities[visited % country.cities.length];
     document.getElementById("country").textContent = country.country;
