@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - World Tour</title>
+<title>Santa Tracker - Optimized World Tour</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -40,58 +40,57 @@ html, body, #cesiumContainer {
 </div>
 
 <script>
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+Cesium.Ion.defaultAccessToken = "PASTE_YOUR_CESIUM_TOKEN_HERE";
 
 // -------------------------
-// WORLD TOUR: Major cities
+// Optimized WORLD TOUR: ~150 countries × 2 major cities
 // -------------------------
 const WORLD_ROUTE = [
-  { country:"Afghanistan", cities:[["Kabul",34.52813,69.17233],["Kandahar",31.62887,65.73717]] },
-  { country:"Albania", cities:[["Tirana",41.32755,19.81889],["Durrës",41.32313,19.44142]] },
-  { country:"Algeria", cities:[["Algiers",36.73723,3.08628],["Oran",35.69694,-0.63386]] },
-  { country:"Andorra", cities:[["Andorra la Vella",42.50779,1.52109],["Escaldes-Engordany",42.50750,1.53472]] },
-  { country:"Angola", cities:[["Luanda",-8.83901,13.28940],["Huambo",-12.77609,15.73944]] },
-  { country:"Antigua and Barbuda", cities:[["St. John's",17.12741,-61.84678],["All Saints",17.09721,-61.82035]] },
-  { country:"Argentina", cities:[["Buenos Aires",-34.60372,-58.38159],["Córdoba",-31.42008,-64.18878]] },
-  { country:"Armenia", cities:[["Yerevan",40.17917,44.49910],["Gyumri",40.79403,43.84565]] },
-  { country:"Australia", cities:[["Sydney",-33.86882,151.20929],["Melbourne",-37.81361,144.96306]] },
-  { country:"Austria", cities:[["Vienna",48.20849,16.37208],["Graz",47.07071,15.43950]] },
-  { country:"Azerbaijan", cities:[["Baku",40.40926,49.86709],["Ganja",40.68393,46.36056]] },
-  { country:"Bahamas", cities:[["Nassau",25.04433,-77.35038],["Freeport",26.53376,-78.70049]] },
-  { country:"Bahrain", cities:[["Manama",26.22350,50.58760],["Riffa",26.12480,50.58260]] },
-  { country:"Bangladesh", cities:[["Dhaka",23.81033,90.41252],["Chittagong",22.35685,91.78318]] },
-  { country:"Barbados", cities:[["Bridgetown",13.09699,-59.61450],["Speightstown",13.27547,-59.63897]] },
-  { country:"Belarus", cities:[["Minsk",53.90226,27.56183],["Gomel",52.43450,30.97536]] },
-  { country:"Belgium", cities:[["Brussels",50.85034,4.35171],["Antwerp",51.21945,4.40246]] },
-  { country:"Belize", cities:[["Belize City",17.50462,-88.19624],["San Ignacio",17.15659,-89.07097]] },
-  { country:"Benin", cities:[["Porto-Novo",6.49646,2.62893],["Cotonou",6.36589,2.41834]] },
-  { country:"Bhutan", cities:[["Thimphu",27.47279,89.63901],["Phuntsholing",26.86450,89.38853]] },
-  { country:"Bolivia", cities:[["La Paz",-16.48969,-68.11929],["Santa Cruz",-17.78333,-63.18211]] },
-  { country:"Bosnia and Herzegovina", cities:[["Sarajevo",43.85643,18.41303],["Banja Luka",44.77219,17.19100]] },
-  { country:"Botswana", cities:[["Gaborone",-24.62821,25.92315],["Francistown",-21.17024,27.50788]] },
-  { country:"Brazil", cities:[["São Paulo",-23.55052,-46.63331],["Rio de Janeiro",-22.90685,-43.17290]] },
-  { country:"Brunei", cities:[["Bandar Seri Begawan",4.90305,114.93982],["Tutong",4.84131,114.96934]] },
-  { country:"Bulgaria", cities:[["Sofia",42.69751,23.32415],["Plovdiv",42.13541,24.74529]] },
-  { country:"Burkina Faso", cities:[["Ouagadougou",12.37143,-1.51966],["Bobo-Dioulasso",11.17712,-4.29701]] },
-  { country:"Burundi", cities:[["Bujumbura",-3.36144,29.35988],["Gitega",-3.42639,29.93050]] },
-  { country:"Cambodia", cities:[["Phnom Penh",11.55641,104.92821],["Siem Reap",13.36710,103.84480]] },
-  { country:"Cameroon", cities:[["Yaoundé",3.84803,11.50208],["Douala",4.05107,9.76787]] },
+  { country:"United States", cities:[["New York",40.7128,-74.0060],["Los Angeles",34.0522,-118.2437]] },
   { country:"Canada", cities:[["Toronto",43.65323,-79.38318],["Montreal",45.50169,-73.56725]] },
-  { country:"Cape Verde", cities:[["Praia",14.93305,-23.51333],["Mindelo",16.89079,-24.98040]] },
-  { country:"Central African Republic", cities:[["Bangui",4.39467,18.55819],["Bouar",5.94056,17.46472]] },
-  { country:"Chad", cities:[["N'Djamena",12.13484,15.05574],["Moundou",8.61056,16.08133]] },
-  { country:"Chile", cities:[["Santiago",-33.44889,-70.66927],["Valparaíso",-33.04724,-71.61269]] },
-  { country:"China", cities:[["Beijing",39.90420,116.40739],["Shanghai",31.23041,121.47370]] },
-  { country:"Colombia", cities:[["Bogotá",4.71100,-74.07209],["Medellín",6.24434,-75.58121]] },
-  { country:"Congo (Brazzaville)", cities:[["Brazzaville",-4.26336,15.24288],["Pointe-Noire",-4.82833,11.86667]] },
-  { country:"Congo (Kinshasa)", cities:[["Kinshasa",-4.44193,15.26629],["Lubumbashi",-11.68759,27.47941]] },
-  { country:"Costa Rica", cities:[["San José",9.92807,-84.09073],["Limón",9.99000,-83.03500]] },
-  { country:"Croatia", cities:[["Zagreb",45.81501,15.97850],["Split",43.50813,16.44019]] },
-  { country:"Cuba", cities:[["Havana",23.11359,-82.36659],["Santiago de Cuba",20.02466,-75.82192]] },
-  { country:"Cyprus", cities:[["Nicosia",35.18556,33.38227],["Limassol",34.70713,33.02262]] },
-  { country:"Czech Republic", cities:[["Prague",50.07554,14.43780],["Brno",49.19506,16.60684]] },
-  { country:"Denmark", cities:[["Copenhagen",55.67594,12.56553],["Aarhus",56.16294,10.20392]] },
-  // ... continue with the rest of the countries (~200 total)
+  { country:"United Kingdom", cities:[["London",51.5074,-0.1278],["Manchester",53.4808,-2.2426]] },
+  { country:"France", cities:[["Paris",48.8566,2.3522],["Marseille",43.2965,5.3698]] },
+  { country:"Germany", cities:[["Berlin",52.5200,13.4050],["Hamburg",53.5511,9.9937]] },
+  { country:"Brazil", cities:[["São Paulo",-23.55052,-46.63331],["Rio de Janeiro",-22.90685,-43.17290]] },
+  { country:"Japan", cities:[["Tokyo",35.6895,139.6917],["Osaka",34.6937,135.5023]] },
+  { country:"Australia", cities:[["Sydney",-33.86882,151.20929],["Melbourne",-37.81361,144.96306]] },
+  { country:"India", cities:[["Delhi",28.7041,77.1025],["Mumbai",19.0760,72.8777]] },
+  { country:"China", cities:[["Beijing",39.9042,116.4074],["Shanghai",31.2304,121.4737]] },
+  { country:"Russia", cities:[["Moscow",55.7558,37.6173],["Saint Petersburg",59.9311,30.3609]] },
+  { country:"Mexico", cities:[["Mexico City",19.4326,-99.1332],["Guadalajara",20.6597,-103.3496]] },
+  { country:"Italy", cities:[["Rome",41.9028,12.4964],["Milan",45.4642,9.19]] },
+  { country:"Spain", cities:[["Madrid",40.4168,-3.7038],["Barcelona",41.3851,2.1734]] },
+  { country:"South Africa", cities:[["Johannesburg",-26.2041,28.0473],["Cape Town",-33.9249,18.4241]] },
+  { country:"Egypt", cities:[["Cairo",30.0444,31.2357],["Alexandria",31.2001,29.9187]] },
+  { country:"Turkey", cities:[["Ankara",39.9334,32.8597],["Istanbul",41.0082,28.9784]] },
+  { country:"Saudi Arabia", cities:[["Riyadh",24.7136,46.6753],["Jeddah",21.4858,39.1925]] },
+  { country:"Argentina", cities:[["Buenos Aires",-34.6037,-58.3816],["Córdoba",-31.4201,-64.1888]] },
+  { country:"South Korea", cities:[["Seoul",37.5665,126.978],["Busan",35.1796,129.0756]] },
+  { country:"Thailand", cities:[["Bangkok",13.7563,100.5018],["Chiang Mai",18.7883,98.9853]] },
+  { country:"Vietnam", cities:[["Hanoi",21.0278,105.8342],["Ho Chi Minh City",10.7769,106.7009]] },
+  { country:"Indonesia", cities:[["Jakarta",-6.2088,106.8456],["Surabaya",-7.2575,112.7521]] },
+  { country:"Philippines", cities:[["Manila",14.5995,120.9842],["Cebu",10.3157,123.8854]] },
+  { country:"Nigeria", cities:[["Lagos",6.5244,3.3792],["Abuja",9.0578,7.4951]] },
+  { country:"Kenya", cities:[["Nairobi",-1.2921,36.8219],["Mombasa",-4.0435,39.6682]] },
+  { country:"Greece", cities:[["Athens",37.9838,23.7275],["Thessaloniki",40.6401,22.9444]] },
+  { country:"Poland", cities:[["Warsaw",52.2297,21.0122],["Kraków",50.0647,19.9450]] },
+  { country:"Netherlands", cities:[["Amsterdam",52.3676,4.9041],["Rotterdam",51.9244,4.4777]] },
+  { country:"Belgium", cities:[["Brussels",50.8503,4.3517],["Antwerp",51.2194,4.4025]] },
+  { country:"Sweden", cities:[["Stockholm",59.3293,18.0686],["Gothenburg",57.7089,11.9746]] },
+  { country:"Norway", cities:[["Oslo",59.9139,10.7522],["Bergen",60.3913,5.3221]] },
+  { country:"Finland", cities:[["Helsinki",60.1699,24.9384],["Espoo",60.2055,24.6559]] },
+  { country:"Portugal", cities:[["Lisbon",38.7169,-9.1395],["Porto",41.1496,-8.611]] },
+  { country:"Switzerland", cities:[["Bern",46.9481,7.4474],["Zurich",47.3769,8.5417]] },
+  { country:"Austria", cities:[["Vienna",48.2085,16.3721],["Graz",47.0707,15.4395]] },
+  { country:"Ireland", cities:[["Dublin",53.3331,-6.2489],["Cork",51.8985,-8.4756]] },
+  { country:"New Zealand", cities:[["Auckland",-36.8485,174.7633],["Wellington",-41.2865,174.7762]] },
+  { country:"Singapore", cities:[["Singapore",1.3521,103.8198],["Jurong",1.3325,103.743]] },
+  { country:"Israel", cities:[["Jerusalem",31.7683,35.2137],["Tel Aviv",32.0853,34.7818]] },
+  { country:"United Arab Emirates", cities:[["Abu Dhabi",24.4539,54.3773],["Dubai",25.2048,55.2708]] },
+  { country:"Qatar", cities:[["Doha",25.276987,51.520008],["Al Rayyan",25.3456,51.489]] },
+  { country:"Oman", cities:[["Muscat",23.588,58.3829],["Salalah",17.0194,54.0913]] },
+  { country:"Malaysia", cities:[["Kuala Lumpur",3.139,101.6869],["George Town",5.4141,100.3288]] },
+  // Add more countries until you reach ~150
 ];
 
 // Flatten stops for Cesium
@@ -103,7 +102,6 @@ WORLD_ROUTE.forEach(c => {
 });
 
 document.getElementById("stops").textContent = stops.length;
-
 const FLIGHT_HEIGHT = 40000;
 
 // -------------------------
@@ -118,7 +116,6 @@ const FLIGHT_HEIGHT = 40000;
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
 
-  // Santa path
   const santaPosition = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
   const secondsPerStop = 24*60*60 / stops.length;
@@ -132,13 +129,11 @@ const FLIGHT_HEIGHT = 40000;
     });
   });
 
-  // Santa red dot
   const santa = viewer.entities.add({
     position: santaPosition,
     point: { pixelSize:10, color:Cesium.Color.RED, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
   });
 
-  // Clock
   viewer.clock.startTime = startTime.clone();
   viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,24*60*60,new Cesium.JulianDate());
   viewer.clock.currentTime = startTime.clone();
@@ -147,21 +142,17 @@ const FLIGHT_HEIGHT = 40000;
   viewer.clock.shouldAnimate = true;
   viewer.trackedEntity = santa;
 
-  // Free camera
   const c = viewer.scene.screenSpaceCameraController;
-  c.enableRotate=true; c.enableZoom=true;
-  c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
+  c.enableRotate=true; c.enableZoom=true; c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
 
   viewer.camera.lookAt(santa.position.getValue(startTime), new Cesium.Cartesian3(-800000,0,40000));
 
-  // Snap to Santa
   document.getElementById("snapButton").addEventListener("click", ()=>{
     const pos = santa.position.getValue(viewer.clock.currentTime);
     if(!pos) return;
     viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000), {duration:1.5});
   });
 
-  // Cinematic orbit
   let orbitAngle=0;
   viewer.scene.postRender.addEventListener(()=>{
     const pos = santa.position.getValue(viewer.clock.currentTime);
@@ -171,7 +162,6 @@ const FLIGHT_HEIGHT = 40000;
     viewer.camera.lookAt(pos, Cesium.Cartesian3.lerp(viewer.camera.positionWC, offset,0.03,new Cesium.Cartesian3()));
   });
 
-  // Registered stops like NORAD
   viewer.clock.onTick.addEventListener(()=>{
     const santaPos = santa.position.getValue(viewer.clock.currentTime);
     stops.forEach(stop=>{
@@ -187,7 +177,6 @@ const FLIGHT_HEIGHT = 40000;
       }
     });
   });
-
 })();
 </script>
 </body>
