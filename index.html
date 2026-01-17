@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Registered Stops</title>
+<title>Santa Tracker - Visited Stops</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -86,7 +86,7 @@ const FLIGHT_HEIGHT = 40000;
 let stops = []; // array of all city stops
 ROUTE.forEach(country => {
   country.cities.forEach(city => {
-    stops.push({ country: country.country, name: city[0], lat: city[1], lon: city[2] });
+    stops.push({ country: country.country, name: city[0], lat: city[1], lon: city[2], entity: null });
   });
 });
 
@@ -116,6 +116,11 @@ document.getElementById("stops").textContent = stops.length;
   stops.forEach((stop,i)=>{
     const time = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
     path.addSample(time,Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT));
+    // Add small gray point for stop
+    stop.entity = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
+      point: { pixelSize: 5, color: Cesium.Color.DARKGRAY, outlineColor: Cesium.Color.WHITE, outlineWidth: 1 }
+    });
   });
 
   // Santa entity
@@ -152,9 +157,8 @@ document.getElementById("stops").textContent = stops.length;
     viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(santaPos,40000),{duration:1.5});
   });
 
-  // Cinematic orbit variables
+  // Cinematic orbit
   let orbitAngle = 0;
-
   viewer.scene.postRender.addEventListener(()=>{
     if (!viewer.scene.screenSpaceCameraController.inertiaSpin) {
       const time = viewer.clock.currentTime;
@@ -174,22 +178,28 @@ document.getElementById("stops").textContent = stops.length;
   });
 
   // =========================
-  // Register stops
+  // Register and mark visited stops
   // =========================
   let visitedStops = new Set();
   viewer.clock.onTick.addEventListener(()=>{
     const time = viewer.clock.currentTime;
+    const santaPos = santa.position.getValue(time);
+
     stops.forEach((stop,index)=>{
       const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT);
-      const santaPos = santa.position.getValue(time);
-      if (santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000) { // ~20km radius to register
-        visitedStops.add(index);
+      if (santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000) {
+        if(!visitedStops.has(index)){
+          visitedStops.add(index);
+          // Change stop color to green when visited
+          stop.entity.point.color = Cesium.Color.LIME;
+          stop.entity.point.pixelSize = 7;
+        }
       }
     });
 
+    // Update HUD
     const lastVisitedIndex = Math.max(...Array.from(visitedStops),0);
     const lastStop = stops[lastVisitedIndex];
-
     document.getElementById("visited").textContent = visitedStops.size;
     if(lastStop){
       document.getElementById("country").textContent = lastStop.country;
