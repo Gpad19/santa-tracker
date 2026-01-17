@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <title>Santa Tracker</title>
 
-<!-- Cesium -->
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
 
@@ -13,7 +12,6 @@ html, body, #cesiumContainer {
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 0;
   background: #081a2b;
   overflow: hidden;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -36,10 +34,6 @@ html, body, #cesiumContainer {
   margin-bottom: 6px;
   font-size: 16px;
 }
-
-.stat {
-  margin: 2px 0;
-}
 </style>
 </head>
 
@@ -48,25 +42,79 @@ html, body, #cesiumContainer {
 
 <div id="hud">
   <div id="title">🎅 Santa Tracker</div>
-  <div class="stat">Stops: <span id="stops">—</span></div>
-  <div class="stat">Visited: <span id="visited">0</span></div>
-  <div class="stat">Gifts: <span id="gifts">0</span></div>
+  <div>Stops: <span id="stops">—</span></div>
+  <div>Visited: <span id="visited">0</span></div>
+  <div>Current: <span id="current">—</span></div>
 </div>
 
 <script>
-/* ==============================
-   CONFIG
-================================ */
+/* ======================
+   CESIUM TOKEN
+====================== */
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
-const MIN_STOPS = 300;
-const MAX_STOPS = 500;
+/* ======================
+   REAL CITY DATA
+   (public-domain style list)
+====================== */
+const CITIES = [
+  ["North Pole", 90, 0],
+  ["Reykjavík", 64.1, -21.9],
+  ["London", 51.5, -0.1],
+  ["Paris", 48.9, 2.4],
+  ["Berlin", 52.5, 13.4],
+  ["Rome", 41.9, 12.5],
+  ["Cairo", 30.0, 31.2],
+  ["Nairobi", -1.3, 36.8],
+  ["Johannesburg", -26.2, 28.0],
+  ["Moscow", 55.8, 37.6],
+  ["Istanbul", 41.0, 28.9],
+  ["Dubai", 25.2, 55.3],
+  ["Mumbai", 19.1, 72.9],
+  ["Delhi", 28.6, 77.2],
+  ["Bangkok", 13.7, 100.5],
+  ["Singapore", 1.3, 103.8],
+  ["Tokyo", 35.7, 139.7],
+  ["Seoul", 37.6, 127.0],
+  ["Beijing", 39.9, 116.4],
+  ["Sydney", -33.9, 151.2],
+  ["Melbourne", -37.8, 144.9],
+  ["Auckland", -36.8, 174.8],
+  ["Honolulu", 21.3, -157.8],
+  ["Los Angeles", 34.0, -118.2],
+  ["San Francisco", 37.8, -122.4],
+  ["Seattle", 47.6, -122.3],
+  ["Vancouver", 49.3, -123.1],
+  ["Denver", 39.7, -105.0],
+  ["Chicago", 41.9, -87.6],
+  ["Toronto", 43.7, -79.4],
+  ["New York", 40.7, -74.0],
+  ["Boston", 42.4, -71.1],
+  ["Washington DC", 38.9, -77.0],
+  ["Miami", 25.8, -80.2],
+  ["Mexico City", 19.4, -99.1],
+  ["Bogotá", 4.7, -74.1],
+  ["Lima", -12.0, -77.0],
+  ["Santiago", -33.4, -70.6],
+  ["Buenos Aires", -34.6, -58.4],
+  ["São Paulo", -23.6, -46.6]
+];
+
+/* ======================
+   CONFIG
+====================== */
 const TOTAL_SECONDS = 24 * 60 * 60;
 const FLIGHT_HEIGHT = 320000;
+const STOPS = Math.min(
+  Math.max(300, CITIES.length * 7),
+  500
+);
 
-/* ==============================
+document.getElementById("stops").textContent = STOPS;
+
+/* ======================
    VIEWER
-================================ */
+====================== */
 const viewer = new Cesium.Viewer("cesiumContainer", {
   animation: false,
   timeline: false,
@@ -83,32 +131,34 @@ viewer.scene.globe.depthTestAgainstTerrain = false;
 viewer.camera.percentageChanged = 0.005;
 viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
 
-/* ==============================
-   ROUTE GENERATION
-================================ */
-const stops = Math.floor(Math.random() * (MAX_STOPS - MIN_STOPS + 1)) + MIN_STOPS;
-document.getElementById("stops").textContent = stops;
-
-const secondsPerStop = TOTAL_SECONDS / stops;
+/* ======================
+   BUILD ROUTE
+====================== */
 const path = new Cesium.SampledPositionProperty();
 const startTime = Cesium.JulianDate.now();
+const secondsPerStop = TOTAL_SECONDS / STOPS;
 
-for (let i = 0; i < stops; i++) {
-  const t = Cesium.JulianDate.addSeconds(
+let index = 0;
+
+for (let i = 0; i < STOPS; i++) {
+  const city = CITIES[index % CITIES.length];
+  index++;
+
+  const time = Cesium.JulianDate.addSeconds(
     startTime,
     i * secondsPerStop,
     new Cesium.JulianDate()
   );
 
-  const lat = Cesium.Math.lerp(-55, 70, Math.random());
-  const lon = Cesium.Math.lerp(-180, 180, Math.random());
-
-  path.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, FLIGHT_HEIGHT));
+  path.addSample(
+    time,
+    Cesium.Cartesian3.fromDegrees(city[2], city[1], FLIGHT_HEIGHT)
+  );
 }
 
-/* ==============================
+/* ======================
    SANTA (RED DOT)
-================================ */
+====================== */
 const santa = viewer.entities.add({
   position: path,
   point: {
@@ -122,67 +172,29 @@ const santa = viewer.entities.add({
 
 viewer.trackedEntity = santa;
 
-/* ==============================
-   PATH LINE (SUBTLE)
-================================ */
-viewer.entities.add({
-  polyline: {
-    positions: path,
-    width: 1.5,
-    material: Cesium.Color.RED.withAlpha(0.35)
-  }
-});
-
-/* ==============================
-   CLOCK (24 HOURS REAL TIME)
-================================ */
+/* ======================
+   CLOCK
+====================== */
 viewer.clock.startTime = startTime.clone();
 viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime, TOTAL_SECONDS, new Cesium.JulianDate());
 viewer.clock.currentTime = startTime.clone();
 viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
 viewer.clock.multiplier = 1;
 
-/* ==============================
-   CINEMATIC CAMERA
-================================ */
-let mode = "WIDE";
-let lastSwitch = 0;
-
-viewer.scene.postRender.addEventListener(() => {
-  const time = viewer.clock.currentTime;
-  const pos = santa.position.getValue(time);
-  if (!pos) return;
-
-  const elapsed = Cesium.JulianDate.secondsDifference(time, startTime);
-
-  if (elapsed - lastSwitch > 45) {
-    mode = mode === "WIDE" ? "CLOSE" : "WIDE";
-    lastSwitch = elapsed;
-  }
-
-  const height = Cesium.Cartographic.fromCartesian(pos).height;
-  let dist = mode === "WIDE"
-    ? Cesium.Math.clamp(height * 9, 3_500_000, 8_000_000)
-    : Cesium.Math.clamp(height * 4, 900_000, 2_500_000);
-
-  viewer.camera.lookAt(
-    pos,
-    new Cesium.Cartesian3(-dist, dist * 0.4, dist * 0.5)
-  );
-});
-
-/* ==============================
-   STATS
-================================ */
+/* ======================
+   HUD UPDATES
+====================== */
 viewer.clock.onTick.addEventListener(() => {
   const elapsed = Cesium.JulianDate.secondsDifference(
     viewer.clock.currentTime,
     startTime
   );
 
-  const visited = Math.min(Math.floor(elapsed / secondsPerStop), stops);
-  document.getElementById("visited").textContent = visited.toLocaleString();
-  document.getElementById("gifts").textContent = (visited * 12000).toLocaleString();
+  const visited = Math.min(Math.floor(elapsed / secondsPerStop), STOPS);
+  document.getElementById("visited").textContent = visited;
+
+  const city = CITIES[visited % CITIES.length];
+  document.getElementById("current").textContent = city[0];
 });
 </script>
 </body>
