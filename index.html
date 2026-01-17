@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Santa Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/cesium@1.111/Build/Cesium/Cesium.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/cesium@1.111/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Cesium.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         html, body, #cesiumContainer {
             width: 100%;
@@ -12,7 +12,6 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: sans-serif;
         }
         .label {
             position: absolute;
@@ -23,6 +22,7 @@
             color: white;
             border-radius: 5px;
             z-index: 100;
+            font-family: sans-serif;
         }
     </style>
 </head>
@@ -31,22 +31,20 @@
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
-    // Set your Cesium Ion default access token
-    Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+    // Use Cesium Ion default token
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-    // Initialize viewer
+    // Initialize viewer with only imagery (no terrain)
     const viewer = new Cesium.Viewer('cesiumContainer', {
-        imageryProvider: new Cesium.IonImageryProvider({ assetId: 2 }), // Bing Maps Aerial
+        terrainProvider: new Cesium.EllipsoidTerrainProvider(), // simple ellipsoid terrain for iPad
         baseLayerPicker: false,
-        terrainProvider: Cesium.createWorldTerrain(),
         timeline: false,
         animation: false
     });
 
-    // Wait for the scene to be ready before adding Santa
-    viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
+    // Wait for scene to initialize
+    viewer.scene.preRender.addEventListener(() => {
         if (!viewer.entities.getById('santa')) {
-            // Add Santa entity
             const santa = viewer.entities.add({
                 id: 'santa',
                 name: "Santa",
@@ -64,7 +62,7 @@
                 }
             });
 
-            // Define a simple path
+            // Santa path
             const santaPath = [
                 [-100, 40],
                 [-50, 50],
@@ -87,7 +85,7 @@
         }
     });
 
-    // Make camera fully touch-friendly
+    // Touch-friendly controls
     viewer.scene.screenSpaceCameraController.enableRotate = true;
     viewer.scene.screenSpaceCameraController.enableTranslate = true;
     viewer.scene.screenSpaceCameraController.enableZoom = true;
