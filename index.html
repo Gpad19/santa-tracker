@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Registered Stops Fixed</title>
+<title>Santa Tracker - Moving Red Dot</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
 
 <style>
-html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; background: #081a2b; overflow: hidden; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
-#hud { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.55); color: white; padding: 12px 16px; border-radius: 10px; backdrop-filter: blur(8px); font-size: 14px; z-index: 10; }
-#title { font-weight: 600; margin-bottom: 6px; font-size: 16px; }
-#snapButton { margin-top: 6px; padding: 6px 12px; background: #ff2d2d; border: none; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; }
-#snapButton:hover { background: #ff5252; }
+html, body, #cesiumContainer { width:100%; height:100%; margin:0; background:#081a2b; overflow:hidden; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+#hud { position:absolute; top:12px; left:12px; background:rgba(0,0,0,0.55); color:white; padding:12px 16px; border-radius:10px; backdrop-filter:blur(8px); font-size:14px; z-index:10; }
+#title { font-weight:600; margin-bottom:6px; font-size:16px; }
+#snapButton { margin-top:6px; padding:6px 12px; background:#ff2d2d; border:none; border-radius:6px; color:white; font-weight:600; cursor:pointer; }
+#snapButton:hover { background:#ff5252; }
 </style>
 </head>
 
@@ -31,7 +31,9 @@ html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; background:
 <script>
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
+// -------------------------
 // 2 cities per country
+// -------------------------
 const ROUTE = [
   { country: "New Zealand", cities: [["Auckland",-36.8,174.8],["Wellington",-41.3,174.8]] },
   { country: "Australia", cities: [["Sydney",-33.9,151.2],["Melbourne",-37.8,144.9]] },
@@ -60,32 +62,32 @@ document.getElementById("stops").textContent = stops.length;
 // -------------------------
 (function initCesium() {
   const viewer = new Cesium.Viewer("cesiumContainer", {
-    timeline: false, animation: false, baseLayerPicker: false,
-    geocoder: false, homeButton: false, sceneModePicker: false,
-    fullscreenButton: false, navigationHelpButton: false, shouldAnimate: true
+    timeline:false, animation:false, baseLayerPicker:false,
+    geocoder:false, homeButton:false, sceneModePicker:false,
+    fullscreenButton:false, navigationHelpButton:false, shouldAnimate:true
   });
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
 
-  // Path
-  const path = new Cesium.SampledPositionProperty();
+  // Santa path
+  const santaPosition = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
   const secondsPerStop = 24*60*60 / stops.length;
 
   stops.forEach((stop,i)=>{
-    const t = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
-    path.addSample(t,Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT));
+    const t = Cesium.JulianDate.addSeconds(startTime, i*secondsPerStop, new Cesium.JulianDate());
+    santaPosition.addSample(t, Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT));
 
     stop.entity = viewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT),
-      point: { pixelSize: 5, color: Cesium.Color.DARKGRAY, outlineColor: Cesium.Color.WHITE, outlineWidth: 1 }
+      position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
+      point: { pixelSize:5, color:Cesium.Color.DARKGRAY, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
     });
   });
 
   // Santa red dot
   const santa = viewer.entities.add({
-    position: path,
-    point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY }
+    position: santaPosition,
+    point: { pixelSize:10, color:Cesium.Color.RED, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
   });
 
   // Clock
@@ -95,6 +97,7 @@ document.getElementById("stops").textContent = stops.length;
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
   viewer.clock.multiplier = 1;
   viewer.trackedEntity = santa;
+  viewer.clock.shouldAnimate = true; // key for iPad
 
   // Free camera
   const c = viewer.scene.screenSpaceCameraController;
@@ -104,14 +107,14 @@ document.getElementById("stops").textContent = stops.length;
   viewer.camera.lookAt(santa.position.getValue(startTime), new Cesium.Cartesian3(-800000,0,40000));
 
   // Snap to Santa
-  document.getElementById("snapButton").addEventListener("click",()=>{
+  document.getElementById("snapButton").addEventListener("click", ()=>{
     const pos = santa.position.getValue(viewer.clock.currentTime);
     if(!pos) return;
     viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000),{duration:1.5});
   });
 
   // Cinematic orbit
-  let orbitAngle=0;
+  let orbitAngle = 0;
   viewer.scene.postRender.addEventListener(()=>{
     const pos = santa.position.getValue(viewer.clock.currentTime);
     if(!pos) return;
@@ -120,18 +123,16 @@ document.getElementById("stops").textContent = stops.length;
     viewer.camera.lookAt(pos, Cesium.Cartesian3.lerp(viewer.camera.positionWC, offset,0.03,new Cesium.Cartesian3()));
   });
 
-  // Registered stops
+  // Registered stops like NORAD
   viewer.clock.onTick.addEventListener(()=>{
     const santaPos = santa.position.getValue(viewer.clock.currentTime);
-    stops.forEach((stop,index)=>{
+    stops.forEach(stop=>{
       if(stop.visited) return;
-      const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT);
-      if(santaPos && Cesium.Cartesian3.distance(santaPos,stopPos)<20000){
+      const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT);
+      if(santaPos && Cesium.Cartesian3.distance(santaPos, stopPos) < 20000){
         stop.visited = true;
         stop.entity.point.color = Cesium.Color.LIME;
         stop.entity.point.pixelSize = 8;
-
-        // HUD update
         document.getElementById("visited").textContent = stops.filter(s=>s.visited).length;
         document.getElementById("country").textContent = stop.country;
         document.getElementById("city").textContent = stop.name;
@@ -143,3 +144,4 @@ document.getElementById("stops").textContent = stops.length;
 </script>
 </body>
 </html>
+
