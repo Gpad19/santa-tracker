@@ -7,16 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/cesium@1.111/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         html, body, #cesiumContainer {
-            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
             font-family: sans-serif;
         }
         .label {
             position: absolute;
-            top: 10px; left: 10px;
+            top: 10px;
+            left: 10px;
             padding: 10px;
             background: rgba(0,0,0,0.5);
             color: white;
             border-radius: 5px;
+            z-index: 100;
         }
     </style>
 </head>
@@ -25,57 +31,63 @@
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
-    // --- Set your Cesium Ion Access Token ---
+    // Set your Cesium Ion default access token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-    // Initialize Cesium viewer
+    // Initialize viewer
     const viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.IonImageryProvider({ assetId: 2 }), // Bing Maps Aerial
+        baseLayerPicker: false,
         terrainProvider: Cesium.createWorldTerrain(),
         timeline: false,
-        animation: false,
-        baseLayerPicker: false
+        animation: false
     });
 
-    // Santa entity
-    const santa = viewer.entities.add({
-        name: "Santa",
-        position: Cesium.Cartesian3.fromDegrees(-100, 40, 1000000),
-        billboard: {
-            image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
-            scale: 0.1,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-        },
-        label: {
-            text: "🎅 Santa",
-            font: "24px sans-serif",
-            verticalOrigin: Cesium.VerticalOrigin.TOP,
-            pixelOffset: new Cesium.Cartesian2(0, -30)
+    // Wait for the scene to be ready before adding Santa
+    viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
+        if (!viewer.entities.getById('santa')) {
+            // Add Santa entity
+            const santa = viewer.entities.add({
+                id: 'santa',
+                name: "Santa",
+                position: Cesium.Cartesian3.fromDegrees(-100, 40, 1000000),
+                billboard: {
+                    image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
+                    scale: 0.1,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+                },
+                label: {
+                    text: "🎅 Santa",
+                    font: "24px sans-serif",
+                    verticalOrigin: Cesium.VerticalOrigin.TOP,
+                    pixelOffset: new Cesium.Cartesian2(0, -30)
+                }
+            });
+
+            // Define a simple path
+            const santaPath = [
+                [-100, 40],
+                [-50, 50],
+                [0, 40],
+                [50, 30],
+                [100, 40],
+                [150, 50],
+                [180, 40]
+            ];
+
+            let step = 0;
+            function moveSanta() {
+                step = (step + 1) % santaPath.length;
+                const [lon, lat] = santaPath[step];
+                santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 1000000);
+                viewer.flyTo(santa, {duration: 1.5});
+            }
+
+            setInterval(moveSanta, 2000);
         }
     });
 
-    // Simulated Santa path
-    const santaPath = [
-        [-100, 40],
-        [-50, 50],
-        [0, 40],
-        [50, 30],
-        [100, 40],
-        [150, 50],
-        [180, 40]
-    ];
-
-    let step = 0;
-    function moveSanta() {
-        step = (step + 1) % santaPath.length;
-        const [lon, lat] = santaPath[step];
-        santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 1000000);
-        viewer.flyTo(santa, {duration: 1.5});
-    }
-
-    // Move Santa every 2 seconds
-    setInterval(moveSanta, 2000);
-
-    // Touch-friendly camera
+    // Make camera fully touch-friendly
     viewer.scene.screenSpaceCameraController.enableRotate = true;
     viewer.scene.screenSpaceCameraController.enableTranslate = true;
     viewer.scene.screenSpaceCameraController.enableZoom = true;
