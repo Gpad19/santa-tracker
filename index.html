@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Visited Stops</title>
+<title>Santa Tracker - 3D Sleigh</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -83,7 +83,7 @@ const ROUTE = [
 ];
 
 const FLIGHT_HEIGHT = 40000;
-let stops = []; // array of all city stops
+let stops = [];
 ROUTE.forEach(country => {
   country.cities.forEach(city => {
     stops.push({ country: country.country, name: city[0], lat: city[1], lon: city[2], entity: null });
@@ -111,7 +111,7 @@ document.getElementById("stops").textContent = stops.length;
   // Build Santa's path
   const path = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
-  const secondsPerStop = 24*60*60 / stops.length; // total 24h divided by real stops
+  const secondsPerStop = 24*60*60 / stops.length;
 
   stops.forEach((stop,i)=>{
     const time = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
@@ -123,10 +123,16 @@ document.getElementById("stops").textContent = stops.length;
     });
   });
 
-  // Santa entity
+  // Santa sleigh 3D model
   const santa = viewer.entities.add({
     position: path,
-    point: { pixelSize: 10, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY }
+    model: {
+        uri: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sleigh/glTF/Sleigh.gltf', // replace with your model if you have one
+        minimumPixelSize: 50,
+        maximumScale: 1.0,
+        scale: 50
+    },
+    orientation: new Cesium.VelocityOrientationProperty(path)
   });
 
   viewer.clock.startTime = startTime.clone();
@@ -177,9 +183,7 @@ document.getElementById("stops").textContent = stops.length;
     }
   });
 
-  // =========================
   // Register and mark visited stops
-  // =========================
   let visitedStops = new Set();
   viewer.clock.onTick.addEventListener(()=>{
     const time = viewer.clock.currentTime;
@@ -197,7 +201,6 @@ document.getElementById("stops").textContent = stops.length;
       }
     });
 
-    // Update HUD
     const lastVisitedIndex = Math.max(...Array.from(visitedStops),0);
     const lastStop = stops[lastVisitedIndex];
     document.getElementById("visited").textContent = visitedStops.size;
