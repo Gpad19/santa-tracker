@@ -1,100 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Santa Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Cesium.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <style>
-        html, body, #cesiumContainer {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        .label {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 10px;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            border-radius: 5px;
-            font-family: sans-serif;
-            z-index: 100;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Santa Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Cesium.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<style>
+  html, body, #cesiumContainer {
+    width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+  }
+  .label {
+    position: absolute;
+    top: 10px; left: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border-radius: 5px;
+    font-family: sans-serif;
+    z-index: 100;
+  }
+</style>
 </head>
 <body>
 <div id="cesiumContainer"></div>
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
-    // Use Cesium Ion token (needed for CesiumJS core)
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-    // Initialize viewer for iPad compatibility
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-        imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-            url: 'https://a.tile.openstreetmap.org/'
-        }),
-        baseLayerPicker: false,
-        timeline: false,
-        animation: false,
-        scene3DOnly: true,
-        shouldAnimate: true
-    });
+// Initialize viewer
+const viewer = new Cesium.Viewer('cesiumContainer', {
+    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://tile.openstreetmap.org/',
+        fileExtension: 'png',
+        maximumLevel: 19,
+        credit: '© OpenStreetMap contributors',
+        crossOrigin: ''  // important for iPad / Safari
+    }),
+    baseLayerPicker: false,
+    timeline: false,
+    animation: false,
+    scene3DOnly: true,
+    shouldAnimate: true
+});
 
-    // Santa entity
-    const santa = viewer.entities.add({
-        id: 'santa',
-        name: "Santa",
-        position: Cesium.Cartesian3.fromDegrees(-100, 40, 2000000),
-        billboard: {
-            image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
-            scale: 0.1,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-        },
-        label: {
-            text: "🎅 Santa",
-            font: "24px sans-serif",
-            verticalOrigin: Cesium.VerticalOrigin.TOP,
-            pixelOffset: new Cesium.Cartesian2(0, -30)
-        }
-    });
-
-    // Santa flight path (simple example)
-    const santaPath = [
-        [-100, 40],
-        [-50, 50],
-        [0, 40],
-        [50, 30],
-        [100, 40],
-        [150, 50],
-        [180, 40]
-    ];
-
-    let step = 0;
-    function moveSanta() {
-        step = (step + 1) % santaPath.length;
-        const [lon, lat] = santaPath[step];
-        santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 2000000);
-        viewer.flyTo(santa, { duration: 1.5 });
+// Santa entity
+const santa = viewer.entities.add({
+    id: 'santa',
+    name: "Santa",
+    position: Cesium.Cartesian3.fromDegrees(-100, 40, 2000000),
+    billboard: {
+        image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
+        scale: 0.1,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+    },
+    label: {
+        text: "🎅 Santa",
+        font: "24px sans-serif",
+        verticalOrigin: Cesium.VerticalOrigin.TOP,
+        pixelOffset: new Cesium.Cartesian2(0, -30)
     }
+});
 
-    // Move Santa every 2 seconds
-    setInterval(moveSanta, 2000);
+// Simple Santa path
+const santaPath = [
+    [-100, 40],
+    [-50, 50],
+    [0, 40],
+    [50, 30],
+    [100, 40],
+    [150, 50],
+    [180, 40]
+];
 
-    // Touch-friendly camera
-    viewer.scene.screenSpaceCameraController.enableRotate = true;
-    viewer.scene.screenSpaceCameraController.enableTranslate = true;
-    viewer.scene.screenSpaceCameraController.enableZoom = true;
-    viewer.scene.screenSpaceCameraController.enableTilt = true;
-    viewer.scene.screenSpaceCameraController.enableLook = true;
+let step = 0;
+function moveSanta() {
+    step = (step + 1) % santaPath.length;
+    const [lon, lat] = santaPath[step];
+    santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 2000000);
+    viewer.flyTo(santa, { duration: 1.5 });
+}
+setInterval(moveSanta, 2000);
 
-    // Handle iPad resize
-    window.addEventListener('resize', () => viewer.resize());
+// Touch-friendly camera
+viewer.scene.screenSpaceCameraController.enableRotate = true;
+viewer.scene.screenSpaceCameraController.enableTranslate = true;
+viewer.scene.screenSpaceCameraController.enableZoom = true;
+viewer.scene.screenSpaceCameraController.enableTilt = true;
+viewer.scene.screenSpaceCameraController.enableLook = true;
+
+// Handle iPad resize
+window.addEventListener('resize', () => viewer.resize());
 </script>
 </body>
 </html>
