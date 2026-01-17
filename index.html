@@ -1,149 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Santa Tracker - Sequential Stops iPad</title>
-
-<script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
-<link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
-
-<style>
-html, body, #cesiumContainer { width:100%; height:100%; margin:0; background:#081a2b; overflow:hidden; font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif; }
-#hud {
-  position:absolute; top:12px; left:12px; background:rgba(0,0,0,0.55);
-  color:white; padding:12px 16px; border-radius:10px;
-  backdrop-filter:blur(8px); font-size:14px; z-index:10;
-}
-#title { font-weight:600; margin-bottom:6px; font-size:16px; }
-#snapButton {
-  margin-top:6px; padding:6px 12px; background:#ff2d2d;
-  border:none; border-radius:6px; color:white; font-weight:600;
-  cursor:pointer;
-}
-#snapButton:hover { background:#ff5252; }
-</style>
+    <meta charset="UTF-8">
+    <title>Santa Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.111/Build/Cesium/Cesium.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.111/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+            font-family: sans-serif;
+        }
+        .label {
+            position: absolute;
+            top: 10px; left: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 5px;
+        }
+    </style>
 </head>
-
 <body>
 <div id="cesiumContainer"></div>
-
-<div id="hud">
-  <div id="title">🎅 Santa Tracker</div>
-  <div>Stops: <span id="stops">—</span></div>
-  <div>Visited: <span id="visited">0</span></div>
-  <div>Country: <span id="country">—</span></div>
-  <div>City: <span id="city">—</span></div>
-  <button id="snapButton">📍 Snap to Santa</button>
-</div>
+<div class="label">🎅 Santa Tracker</div>
 
 <script>
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+    // Initialize Cesium viewer
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+        terrainProvider: Cesium.createWorldTerrain(),
+        timeline: false,
+        animation: false,
+        baseLayerPicker: false
+    });
 
-// -------------------------
-// ~150 countries × 2 major cities
-// -------------------------
-const WORLD_ROUTE = [
-  { country:"United States", cities:[["New York",40.7128,-74.0060],["Los Angeles",34.0522,-118.2437]] },
-  { country:"Canada", cities:[["Toronto",43.65323,-79.38318],["Montreal",45.50169,-73.56725]] },
-  { country:"United Kingdom", cities:[["London",51.5074,-0.1278],["Manchester",53.4808,-2.2426]] },
-  { country:"France", cities:[["Paris",48.8566,2.3522],["Marseille",43.2965,5.3698]] },
-  { country:"Germany", cities:[["Berlin",52.5200,13.4050],["Hamburg",53.5511,9.9937]] },
-  { country:"Brazil", cities:[["São Paulo",-23.55052,-46.63331],["Rio de Janeiro",-22.90685,-43.17290]] },
-  { country:"Japan", cities:[["Tokyo",35.6895,139.6917],["Osaka",34.6937,135.5023]] },
-  { country:"Australia", cities:[["Sydney",-33.86882,151.20929],["Melbourne",-37.81361,144.96306]] },
-  { country:"India", cities:[["Delhi",28.7041,77.1025],["Mumbai",19.0760,72.8777]] },
-  { country:"China", cities:[["Beijing",39.9042,116.4074],["Shanghai",31.2304,121.4737]] }
-  // Add remaining countries up to ~150
-];
+    // Santa entity
+    const santa = viewer.entities.add({
+        name: "Santa",
+        position: Cesium.Cartesian3.fromDegrees(-100, 40, 1000000),
+        billboard: {
+            image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
+            scale: 0.1,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        },
+        label: {
+            text: "🎅 Santa",
+            font: "24px sans-serif",
+            verticalOrigin: Cesium.VerticalOrigin.TOP,
+            pixelOffset: new Cesium.Cartesian2(0, -30)
+        }
+    });
 
-let stops = [];
-WORLD_ROUTE.forEach(c => c.cities.forEach(city => {
-  stops.push({ country:c.country, name:city[0], lat:city[1], lon:city[2], entity:null, visited:false });
-}));
+    // Simulated Santa path
+    const santaPath = [
+        [-100, 40],
+        [-50, 50],
+        [0, 40],
+        [50, 30],
+        [100, 40],
+        [150, 50],
+        [180, 40]
+    ];
 
-document.getElementById("stops").textContent = stops.length;
-
-const FLIGHT_HEIGHT = 40000;
-
-// -------------------------
-// Initialize Cesium Viewer
-// -------------------------
-const viewer = new Cesium.Viewer("cesiumContainer", {
-  timeline:false, animation:false, baseLayerPicker:false,
-  geocoder:false, homeButton:false, sceneModePicker:false,
-  fullscreenButton:false, navigationHelpButton:false, shouldAnimate:true
-});
-
-// Enable full touch camera control
-const c = viewer.scene.screenSpaceCameraController;
-c.enableRotate=true; c.enableZoom=true; c.enableTranslate=true;
-c.enableTilt=true; c.enableLook=true;
-
-// -------------------------
-// Santa entity with sequential movement
-// -------------------------
-const santaPosition = new Cesium.SampledPositionProperty();
-const startTime = Cesium.JulianDate.now();
-const totalSeconds = 24*60*60; // 24 hours
-const secondsPerStop = totalSeconds / stops.length;
-
-// Add each stop sequentially
-stops.forEach((stop,i)=>{
-  const t = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
-  santaPosition.addSample(t, Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT));
-
-  // Add stop point
-  stop.entity = viewer.entities.add({
-    position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
-    point: { pixelSize:5, color:Cesium.Color.DARKGRAY, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
-  });
-});
-
-// Santa red dot
-const santa = viewer.entities.add({
-  position: santaPosition,
-  point: { pixelSize:10, color:Cesium.Color.RED, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
-});
-
-// -------------------------
-// Clock
-// -------------------------
-viewer.clock.startTime = startTime.clone();
-viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,totalSeconds,new Cesium.JulianDate());
-viewer.clock.currentTime = startTime.clone();
-viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
-viewer.clock.multiplier = stops.length / 60; // fast enough for visible movement on iPad
-viewer.clock.shouldAnimate = true;
-
-// -------------------------
-// Snap-to-Santa Button
-// -------------------------
-document.getElementById("snapButton").addEventListener("click", ()=>{
-  const pos = santa.position.getValue(viewer.clock.currentTime);
-  if(!pos) return;
-  viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000), {duration:1.5});
-});
-
-// -------------------------
-// Register stops
-// -------------------------
-const STOP_RADIUS = 80000; // meters for iPad detection
-
-viewer.clock.onTick.addEventListener(()=>{
-  const santaPos = santa.position.getValue(viewer.clock.currentTime);
-  stops.forEach(stop=>{
-    if(stop.visited) return;
-    const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT);
-    if(santaPos && Cesium.Cartesian3.distance(santaPos,stopPos)<STOP_RADIUS){
-      stop.visited = true;
-      stop.entity.point.color = Cesium.Color.LIME;
-      stop.entity.point.pixelSize = 8;
-      document.getElementById("visited").textContent = stops.filter(s=>s.visited).length;
-      document.getElementById("country").textContent = stop.country;
-      document.getElementById("city").textContent = stop.name;
+    let step = 0;
+    function moveSanta() {
+        step = (step + 1) % santaPath.length;
+        const [lon, lat] = santaPath[step];
+        santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 1000000);
+        viewer.flyTo(santa, {duration: 1.5});
     }
-  });
-});
+
+    // Move Santa every 2 seconds
+    setInterval(moveSanta, 2000);
+
+    // Touch-friendly camera
+    viewer.scene.screenSpaceCameraController.enableRotate = true;
+    viewer.scene.screenSpaceCameraController.enableTranslate = true;
+    viewer.scene.screenSpaceCameraController.enableZoom = true;
+    viewer.scene.screenSpaceCameraController.enableTilt = true;
+    viewer.scene.screenSpaceCameraController.enableLook = true;
 </script>
 </body>
 </html>
