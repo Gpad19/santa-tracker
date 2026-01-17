@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - 3D Sleigh</title>
+<title>Santa Tracker - Flying Sleigh</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -123,11 +123,11 @@ document.getElementById("stops").textContent = stops.length;
     });
   });
 
-  // Santa sleigh 3D model
+  // Santa sleigh model
   const santa = viewer.entities.add({
     position: path,
     model: {
-        uri: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sleigh/glTF/Sleigh.gltf', // replace with your model if you have one
+        uri: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sleigh/glTF/Sleigh.gltf',
         minimumPixelSize: 50,
         maximumScale: 1.0,
         scale: 50
@@ -194,7 +194,6 @@ document.getElementById("stops").textContent = stops.length;
       if (santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000) {
         if(!visitedStops.has(index)){
           visitedStops.add(index);
-          // Change stop color to green when visited
           stop.entity.point.color = Cesium.Color.LIME;
           stop.entity.point.pixelSize = 7;
         }
@@ -207,6 +206,23 @@ document.getElementById("stops").textContent = stops.length;
     if(lastStop){
       document.getElementById("country").textContent = lastStop.country;
       document.getElementById("city").textContent = lastStop.name;
+    }
+
+    // -----------------------------
+    // Dynamic sleigh tilt
+    // -----------------------------
+    if (santaPos) {
+      const deltaTime = 1; // seconds ahead for computing direction
+      const futureTime = Cesium.JulianDate.addSeconds(time, deltaTime, new Cesium.JulianDate());
+      const futurePos = path.getValue(futureTime);
+      if(futurePos){
+        const forward = Cesium.Cartesian3.subtract(futurePos, santaPos, new Cesium.Cartesian3());
+        const right = Cesium.Cartesian3.cross(forward, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
+        const roll = Cesium.Math.clamp(Cesium.Cartesian3.magnitude(right)/200000, -0.4, 0.4); // tilt factor
+        const hpr = Cesium.HeadingPitchRoll.fromQuaternion(Cesium.Quaternion.IDENTITY);
+        hpr.roll = roll;
+        santa.orientation = Cesium.Transforms.headingPitchRollQuaternion(santaPos, hpr);
+      }
     }
   });
 
