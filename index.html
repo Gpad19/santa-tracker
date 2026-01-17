@@ -7,10 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         html, body, #cesiumContainer {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
+            width: 100%; 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
             overflow: hidden;
         }
         .label {
@@ -21,8 +21,8 @@
             background: rgba(0,0,0,0.5);
             color: white;
             border-radius: 5px;
-            z-index: 100;
             font-family: sans-serif;
+            z-index: 100;
         }
     </style>
 </head>
@@ -31,66 +31,78 @@
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
-    // Use Cesium Ion default token
+    // Cesium Ion token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-    // Initialize viewer with only imagery (no terrain)
+    // Minimal viewer for iPad compatibility
     const viewer = new Cesium.Viewer('cesiumContainer', {
-        terrainProvider: new Cesium.EllipsoidTerrainProvider(), // simple ellipsoid terrain for iPad
+        scene3DOnly: true,           // ensures WebGL1 fallback works
         baseLayerPicker: false,
         timeline: false,
-        animation: false
+        animation: false,
+        infoBox: false,
+        selectionIndicator: false,
+        shouldAnimate: true
     });
 
-    // Wait for scene to initialize
-    viewer.scene.preRender.addEventListener(() => {
-        if (!viewer.entities.getById('santa')) {
-            const santa = viewer.entities.add({
-                id: 'santa',
-                name: "Santa",
-                position: Cesium.Cartesian3.fromDegrees(-100, 40, 1000000),
-                billboard: {
-                    image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
-                    scale: 0.1,
-                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-                },
-                label: {
-                    text: "🎅 Santa",
-                    font: "24px sans-serif",
-                    verticalOrigin: Cesium.VerticalOrigin.TOP,
-                    pixelOffset: new Cesium.Cartesian2(0, -30)
-                }
-            });
+    // Use Bing imagery to avoid terrain issues
+    viewer.imageryLayers.removeAll();
+    viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+        url: 'https://dev.virtualearth.net',
+        key: 'YOUR_BING_MAPS_KEY',
+        mapStyle: Cesium.BingMapsStyle.AERIAL
+    }));
 
-            // Santa path
-            const santaPath = [
-                [-100, 40],
-                [-50, 50],
-                [0, 40],
-                [50, 30],
-                [100, 40],
-                [150, 50],
-                [180, 40]
-            ];
-
-            let step = 0;
-            function moveSanta() {
-                step = (step + 1) % santaPath.length;
-                const [lon, lat] = santaPath[step];
-                santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 1000000);
-                viewer.flyTo(santa, {duration: 1.5});
-            }
-
-            setInterval(moveSanta, 2000);
+    // Santa entity
+    const santa = viewer.entities.add({
+        id: 'santa',
+        name: "Santa",
+        position: Cesium.Cartesian3.fromDegrees(-100, 40, 2000000),
+        billboard: {
+            image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
+            scale: 0.1,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        },
+        label: {
+            text: "🎅 Santa",
+            font: "24px sans-serif",
+            verticalOrigin: Cesium.VerticalOrigin.TOP,
+            pixelOffset: new Cesium.Cartesian2(0, -30)
         }
     });
 
-    // Touch-friendly controls
+    // Simple Santa path
+    const santaPath = [
+        [-100, 40],
+        [-50, 50],
+        [0, 40],
+        [50, 30],
+        [100, 40],
+        [150, 50],
+        [180, 40]
+    ];
+
+    let step = 0;
+    function moveSanta() {
+        step = (step + 1) % santaPath.length;
+        const [lon, lat] = santaPath[step];
+        santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 2000000);
+        viewer.flyTo(santa, { duration: 1.5 });
+    }
+
+    setInterval(moveSanta, 2000);
+
+    // Touch-friendly camera
     viewer.scene.screenSpaceCameraController.enableRotate = true;
     viewer.scene.screenSpaceCameraController.enableTranslate = true;
     viewer.scene.screenSpaceCameraController.enableZoom = true;
     viewer.scene.screenSpaceCameraController.enableTilt = true;
     viewer.scene.screenSpaceCameraController.enableLook = true;
+
+    // Resize handling for iPad
+    window.addEventListener('resize', function() {
+        viewer.resize();
+    });
 </script>
 </body>
 </html>
