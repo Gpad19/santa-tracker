@@ -6,10 +6,10 @@
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/cesium@1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <style>
-  html, body, #cesiumContainer {
+html, body, #cesiumContainer {
     width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-  }
-  .label {
+}
+.label {
     position: absolute;
     top: 10px; left: 10px;
     padding: 10px;
@@ -18,7 +18,7 @@
     border-radius: 5px;
     font-family: sans-serif;
     z-index: 100;
-  }
+}
 </style>
 </head>
 <body>
@@ -26,16 +26,15 @@
 <div class="label">🎅 Santa Tracker</div>
 
 <script>
+// Cesium Ion token (needed for core Cesium)
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE';
 
-// Initialize viewer
+// Initialize Cesium viewer
 const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://tile.openstreetmap.org/',
-        fileExtension: 'png',
-        maximumLevel: 19,
-        credit: '© OpenStreetMap contributors',
-        crossOrigin: ''  // important for iPad / Safari
+    imageryProvider: new Cesium.UrlTemplateImageryProvider({
+        url: 'https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png',
+        credit: 'Map tiles by Stamen Design, OpenStreetMap contributors',
+        crossOrigin: 'anonymous'
     }),
     baseLayerPicker: false,
     timeline: false,
@@ -44,14 +43,39 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     shouldAnimate: true
 });
 
-// Santa entity
+// Smooth Santa path: a continuous path around the globe
+const santaPathCoordinates = [];
+for (let lon = -180; lon <= 180; lon += 2) {
+    const lat = 30 * Math.sin((lon / 180) * Math.PI); // just a wavy flight path
+    santaPathCoordinates.push([lon, lat]);
+}
+
+// Create a Cesium SampledPositionProperty for smooth animation
+const santaPosition = new Cesium.SampledPositionProperty();
+const startTime = Cesium.JulianDate.now();
+santaPathCoordinates.forEach((coord, i) => {
+    const time = Cesium.JulianDate.addSeconds(startTime, i * 2, new Cesium.JulianDate());
+    const position = Cesium.Cartesian3.fromDegrees(coord[0], coord[1], 1500000);
+    santaPosition.addSample(time, position);
+});
+
+// Loop the Santa animation
+const totalDuration = santaPathCoordinates.length * 2; // seconds
+viewer.clock.startTime = startTime.clone();
+viewer.clock.currentTime = startTime.clone();
+viewer.clock.multiplier = 1;
+viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+viewer.clock.shouldAnimate = true;
+viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime, totalDuration, new Cesium.JulianDate());
+
+// Add Santa entity
 const santa = viewer.entities.add({
     id: 'santa',
     name: "Santa",
-    position: Cesium.Cartesian3.fromDegrees(-100, 40, 2000000),
+    position: santaPosition,
     billboard: {
         image: "https://upload.wikimedia.org/wikipedia/commons/1/1e/Santa_Claus_icon.svg",
-        scale: 0.1,
+        scale: 0.12,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM
     },
     label: {
@@ -62,25 +86,8 @@ const santa = viewer.entities.add({
     }
 });
 
-// Simple Santa path
-const santaPath = [
-    [-100, 40],
-    [-50, 50],
-    [0, 40],
-    [50, 30],
-    [100, 40],
-    [150, 50],
-    [180, 40]
-];
-
-let step = 0;
-function moveSanta() {
-    step = (step + 1) % santaPath.length;
-    const [lon, lat] = santaPath[step];
-    santa.position = Cesium.Cartesian3.fromDegrees(lon, lat, 2000000);
-    viewer.flyTo(santa, { duration: 1.5 });
-}
-setInterval(moveSanta, 2000);
+// Make camera follow Santa smoothly
+viewer.trackedEntity = santa;
 
 // Touch-friendly camera
 viewer.scene.screenSpaceCameraController.enableRotate = true;
@@ -89,7 +96,7 @@ viewer.scene.screenSpaceCameraController.enableZoom = true;
 viewer.scene.screenSpaceCameraController.enableTilt = true;
 viewer.scene.screenSpaceCameraController.enableLook = true;
 
-// Handle iPad resize
+// Resize handling
 window.addEventListener('resize', () => viewer.resize());
 </script>
 </body>
