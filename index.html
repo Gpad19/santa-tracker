@@ -27,6 +27,7 @@ html, body, #cesiumContainer {
   border-radius: 10px;
   backdrop-filter: blur(8px);
   font-size: 14px;
+  z-index: 10;
 }
 
 #title {
@@ -34,22 +35,37 @@ html, body, #cesiumContainer {
   margin-bottom: 6px;
   font-size: 16px;
 }
+
+#snapButton {
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: #ff2d2d;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+#snapButton:hover {
+  background: #ff5252;
+}
 </style>
 </head>
 
 <body>
 <div id="cesiumContainer"></div>
+
 <div id="hud">
   <div id="title">🎅 Santa Tracker</div>
   <div>Stops: <span id="stops">—</span></div>
   <div>Visited: <span id="visited">0</span></div>
   <div>Country: <span id="country">—</span></div>
   <div>City: <span id="city">—</span></div>
+  <button id="snapButton">📍 Snap to Santa</button>
 </div>
 
 <script>
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
-const BING_KEY = "PASTE_YOUR_BING_MAPS_KEY_HERE";
 
 const ROUTE = [
   { country: "New Zealand", cities: [["Auckland",-36.8,174.8],["Wellington",-41.3,174.8]] },
@@ -71,17 +87,15 @@ const TOTAL_STOPS = 360;
 const FLIGHT_HEIGHT = 40000;
 document.getElementById("stops").textContent = TOTAL_STOPS;
 
-(async function initCesium() {
-  const bing = await Cesium.BingMapsImageryProvider.fromUrl(
-    "https://dev.virtualearth.net",
-    { key: BING_KEY, mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS_ON_DEMAND }
-  );
+(function initCesium() {
 
+  // =========================
+  // Create viewer with default Cesium imagery
+  // =========================
   const viewer = new Cesium.Viewer("cesiumContainer", {
-    imageryProvider: bing,
-    baseLayerPicker: false,
     timeline: false,
     animation: false,
+    baseLayerPicker: false,
     geocoder: false,
     homeButton: false,
     sceneModePicker: false,
@@ -92,6 +106,9 @@ document.getElementById("stops").textContent = TOTAL_STOPS;
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
 
+  // =========================
+  // Build Santa's path
+  // =========================
   const path = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
   const secondsPerStop = TOTAL_SECONDS / TOTAL_STOPS;
@@ -116,28 +133,40 @@ document.getElementById("stops").textContent = TOTAL_STOPS;
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
   viewer.clock.multiplier = 1;
 
-  viewer.trackedEntity = santa; // initial tracking
+  viewer.trackedEntity = santa;
 
   // =========================
-  // Camera free movement
+  // Free camera controls
   // =========================
-  // Enable rotation, zoom, pan around red dot
-  viewer.scene.screenSpaceCameraController.enableRotate = true;
-  viewer.scene.screenSpaceCameraController.enableZoom = true;
-  viewer.scene.screenSpaceCameraController.enableTranslate = true;
-  viewer.scene.screenSpaceCameraController.enableTilt = true;
-  viewer.scene.screenSpaceCameraController.enableLook = true;
+  const c = viewer.scene.screenSpaceCameraController;
+  c.enableRotate = true;
+  c.enableZoom = true;
+  c.enableTranslate = true;
+  c.enableTilt = true;
+  c.enableLook = true;
 
-  // Optional: initial camera offset so Santa is in view
+  // Initial camera offset
   const initialPos = santa.position.getValue(startTime);
-  viewer.camera.lookAt(initialPos,new Cesium.Cartesian3(-800000, 0, 40000));
+  viewer.camera.lookAt(initialPos,new Cesium.Cartesian3(-800000,0,40000));
+
+  // =========================
+  // Snap Back to Santa Button
+  // =========================
+  const snapBtn = document.getElementById("snapButton");
+  snapBtn.addEventListener("click", () => {
+    const santaPos = santa.position.getValue(viewer.clock.currentTime);
+    if (!santaPos) return;
+    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(santaPos, 40000), {
+      duration: 1.5
+    });
+  });
 
   // =========================
   // HUD updates
   // =========================
   viewer.clock.onTick.addEventListener(()=>{
     const elapsed = Cesium.JulianDate.secondsDifference(viewer.clock.currentTime,startTime);
-    const visited = Math.min(Math.floor(elapsed / secondsPerStop), TOTAL_STOPS);
+    const visited = Math.min(Math.floor(elapsed / secondsPerStop),TOTAL_STOPS);
     document.getElementById("visited").textContent = visited;
     const routePos = Math.min(Math.floor((visited / TOTAL_STOPS)*ROUTE.length),ROUTE.length-1);
     const country = ROUTE[routePos];
