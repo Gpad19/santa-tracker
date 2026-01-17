@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Flying Sleigh</title>
+<title>Santa Tracker - iPad Friendly Sleigh</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -30,11 +30,7 @@ html, body, #cesiumContainer {
   z-index: 10;
 }
 
-#title {
-  font-weight: 600;
-  margin-bottom: 6px;
-  font-size: 16px;
-}
+#title { font-weight: 600; margin-bottom: 6px; font-size: 16px; }
 
 #snapButton {
   margin-top: 6px;
@@ -46,9 +42,7 @@ html, body, #cesiumContainer {
   font-weight: 600;
   cursor: pointer;
 }
-#snapButton:hover {
-  background: #ff5252;
-}
+#snapButton:hover { background: #ff5252; }
 </style>
 </head>
 
@@ -65,8 +59,11 @@ html, body, #cesiumContainer {
 </div>
 
 <script>
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+Cesium.Ion.defaultAccessToken = "PASTE_YOUR_CESIUM_TOKEN_HERE";
 
+// -------------------------
+// Route data
+// -------------------------
 const ROUTE = [
   { country: "New Zealand", cities: [["Auckland",-36.8,174.8],["Wellington",-41.3,174.8]] },
   { country: "Australia", cities: [["Sydney",-33.9,151.2],["Melbourne",-37.8,144.9]] },
@@ -92,6 +89,9 @@ ROUTE.forEach(country => {
 
 document.getElementById("stops").textContent = stops.length;
 
+// -------------------------
+// Initialize Cesium
+// -------------------------
 (function initCesium() {
 
   const viewer = new Cesium.Viewer("cesiumContainer", {
@@ -108,7 +108,9 @@ document.getElementById("stops").textContent = stops.length;
 
   viewer.scene.globe.depthTestAgainstTerrain = false;
 
-  // Build Santa's path
+  // -------------------------
+  // Santa path
+  // -------------------------
   const path = new Cesium.SampledPositionProperty();
   const startTime = Cesium.JulianDate.now();
   const secondsPerStop = 24*60*60 / stops.length;
@@ -116,14 +118,17 @@ document.getElementById("stops").textContent = stops.length;
   stops.forEach((stop,i)=>{
     const time = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
     path.addSample(time,Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT));
-    // Add small gray point for stop
+
+    // Stop marker
     stop.entity = viewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
       point: { pixelSize: 5, color: Cesium.Color.DARKGRAY, outlineColor: Cesium.Color.WHITE, outlineWidth: 1 }
     });
   });
 
+  // -------------------------
   // Santa sleigh model
+  // -------------------------
   const santa = viewer.entities.add({
     position: path,
     model: {
@@ -135,15 +140,19 @@ document.getElementById("stops").textContent = stops.length;
     orientation: new Cesium.VelocityOrientationProperty(path)
   });
 
+  // -------------------------
+  // Clock
+  // -------------------------
   viewer.clock.startTime = startTime.clone();
   viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,24*60*60,new Cesium.JulianDate());
   viewer.clock.currentTime = startTime.clone();
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
   viewer.clock.multiplier = 1;
-
   viewer.trackedEntity = santa;
 
+  // -------------------------
   // Free camera
+  // -------------------------
   const c = viewer.scene.screenSpaceCameraController;
   c.enableRotate = true;
   c.enableZoom = true;
@@ -151,25 +160,25 @@ document.getElementById("stops").textContent = stops.length;
   c.enableTilt = true;
   c.enableLook = true;
 
-  // Initial camera
   const initialPos = santa.position.getValue(startTime);
   viewer.camera.lookAt(initialPos,new Cesium.Cartesian3(-800000,0,40000));
 
   // Snap button
-  const snapBtn = document.getElementById("snapButton");
-  snapBtn.addEventListener("click",()=>{
-    const santaPos = santa.position.getValue(viewer.clock.currentTime);
-    if(!santaPos) return;
-    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(santaPos,40000),{duration:1.5});
+  document.getElementById("snapButton").addEventListener("click",()=>{
+    const pos = santa.position.getValue(viewer.clock.currentTime);
+    if(!pos) return;
+    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000),{duration:1.5});
   });
 
+  // -------------------------
   // Cinematic orbit
+  // -------------------------
   let orbitAngle = 0;
   viewer.scene.postRender.addEventListener(()=>{
-    if (!viewer.scene.screenSpaceCameraController.inertiaSpin) {
+    if(!viewer.scene.screenSpaceCameraController.inertiaSpin){
       const time = viewer.clock.currentTime;
-      const santaPos = santa.position.getValue(time);
-      if (!santaPos) return;
+      const pos = santa.position.getValue(time);
+      if(!pos) return;
       orbitAngle += 0.001;
       const offset = new Cesium.Cartesian3(
         -800000*Math.cos(orbitAngle),
@@ -177,13 +186,15 @@ document.getElementById("stops").textContent = stops.length;
         40000
       );
       viewer.camera.lookAt(
-        santaPos,
+        pos,
         Cesium.Cartesian3.lerp(viewer.camera.positionWC, offset, 0.03, new Cesium.Cartesian3())
       );
     }
   });
 
-  // Register and mark visited stops
+  // -------------------------
+  // Track visited stops
+  // -------------------------
   let visitedStops = new Set();
   viewer.clock.onTick.addEventListener(()=>{
     const time = viewer.clock.currentTime;
@@ -191,7 +202,7 @@ document.getElementById("stops").textContent = stops.length;
 
     stops.forEach((stop,index)=>{
       const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon,stop.lat,FLIGHT_HEIGHT);
-      if (santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000) {
+      if(santaPos && Cesium.Cartesian3.distance(santaPos,stopPos) < 20000){
         if(!visitedStops.has(index)){
           visitedStops.add(index);
           stop.entity.point.color = Cesium.Color.LIME;
@@ -208,17 +219,17 @@ document.getElementById("stops").textContent = stops.length;
       document.getElementById("city").textContent = lastStop.name;
     }
 
-    // -----------------------------
-    // Dynamic sleigh tilt
-    // -----------------------------
-    if (santaPos) {
-      const deltaTime = 1; // seconds ahead for computing direction
+    // -------------------------
+    // Sleigh tilt when turning
+    // -------------------------
+    if(santaPos){
+      const deltaTime = 1;
       const futureTime = Cesium.JulianDate.addSeconds(time, deltaTime, new Cesium.JulianDate());
       const futurePos = path.getValue(futureTime);
       if(futurePos){
         const forward = Cesium.Cartesian3.subtract(futurePos, santaPos, new Cesium.Cartesian3());
         const right = Cesium.Cartesian3.cross(forward, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
-        const roll = Cesium.Math.clamp(Cesium.Cartesian3.magnitude(right)/200000, -0.4, 0.4); // tilt factor
+        const roll = Cesium.Math.clamp(Cesium.Cartesian3.magnitude(right)/200000, -0.4, 0.4);
         const hpr = Cesium.HeadingPitchRoll.fromQuaternion(Cesium.Quaternion.IDENTITY);
         hpr.roll = roll;
         santa.orientation = Cesium.Transforms.headingPitchRollQuaternion(santaPos, hpr);
