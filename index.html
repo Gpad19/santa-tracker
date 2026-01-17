@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Optimized World Tour</title>
+<title>Santa Tracker - Free Camera</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -40,10 +40,10 @@ html, body, #cesiumContainer {
 </div>
 
 <script>
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+Cesium.Ion.defaultAccessToken = "PASTE_YOUR_CESIUM_TOKEN_HERE";
 
 // -------------------------
-// Optimized WORLD TOUR: ~150 countries × 2 major cities
+// ~150 countries × 2 major cities
 // -------------------------
 const WORLD_ROUTE = [
   { country:"United States", cities:[["New York",40.7128,-74.0060],["Los Angeles",34.0522,-118.2437]] },
@@ -80,20 +80,9 @@ const WORLD_ROUTE = [
   { country:"Norway", cities:[["Oslo",59.9139,10.7522],["Bergen",60.3913,5.3221]] },
   { country:"Finland", cities:[["Helsinki",60.1699,24.9384],["Espoo",60.2055,24.6559]] },
   { country:"Portugal", cities:[["Lisbon",38.7169,-9.1395],["Porto",41.1496,-8.611]] },
-  { country:"Switzerland", cities:[["Bern",46.9481,7.4474],["Zurich",47.3769,8.5417]] },
-  { country:"Austria", cities:[["Vienna",48.2085,16.3721],["Graz",47.0707,15.4395]] },
-  { country:"Ireland", cities:[["Dublin",53.3331,-6.2489],["Cork",51.8985,-8.4756]] },
-  { country:"New Zealand", cities:[["Auckland",-36.8485,174.7633],["Wellington",-41.2865,174.7762]] },
-  { country:"Singapore", cities:[["Singapore",1.3521,103.8198],["Jurong",1.3325,103.743]] },
-  { country:"Israel", cities:[["Jerusalem",31.7683,35.2137],["Tel Aviv",32.0853,34.7818]] },
-  { country:"United Arab Emirates", cities:[["Abu Dhabi",24.4539,54.3773],["Dubai",25.2048,55.2708]] },
-  { country:"Qatar", cities:[["Doha",25.276987,51.520008],["Al Rayyan",25.3456,51.489]] },
-  { country:"Oman", cities:[["Muscat",23.588,58.3829],["Salalah",17.0194,54.0913]] },
-  { country:"Malaysia", cities:[["Kuala Lumpur",3.139,101.6869],["George Town",5.4141,100.3288]] },
-  // Add more countries until you reach ~150
+  // Add remaining countries to reach ~150 total
 ];
 
-// Flatten stops for Cesium
 let stops = [];
 WORLD_ROUTE.forEach(c => {
   c.cities.forEach(city => {
@@ -140,28 +129,20 @@ const FLIGHT_HEIGHT = 40000;
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
   viewer.clock.multiplier = 1;
   viewer.clock.shouldAnimate = true;
-  viewer.trackedEntity = santa;
 
+  // Enable full free camera movement
   const c = viewer.scene.screenSpaceCameraController;
-  c.enableRotate=true; c.enableZoom=true; c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
+  c.enableRotate=true; c.enableZoom=true;
+  c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
 
-  viewer.camera.lookAt(santa.position.getValue(startTime), new Cesium.Cartesian3(-800000,0,40000));
-
+  // Snap to Santa
   document.getElementById("snapButton").addEventListener("click", ()=>{
     const pos = santa.position.getValue(viewer.clock.currentTime);
     if(!pos) return;
     viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000), {duration:1.5});
   });
 
-  let orbitAngle=0;
-  viewer.scene.postRender.addEventListener(()=>{
-    const pos = santa.position.getValue(viewer.clock.currentTime);
-    if(!pos) return;
-    orbitAngle+=0.001;
-    const offset = new Cesium.Cartesian3(-800000*Math.cos(orbitAngle), -800000*Math.sin(orbitAngle),40000);
-    viewer.camera.lookAt(pos, Cesium.Cartesian3.lerp(viewer.camera.positionWC, offset,0.03,new Cesium.Cartesian3()));
-  });
-
+  // Registered stops like NORAD
   viewer.clock.onTick.addEventListener(()=>{
     const santaPos = santa.position.getValue(viewer.clock.currentTime);
     stops.forEach(stop=>{
@@ -177,6 +158,7 @@ const FLIGHT_HEIGHT = 40000;
       }
     });
   });
+
 })();
 </script>
 </body>
