@@ -1,25 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Santa Tracker 🎅</title>
+<meta charset="UTF-8" />
+<title>Santa Tracker</title>
 
-  <!-- Cesium -->
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<!-- Cesium -->
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+<link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
 
-  <link rel="stylesheet" href="style.css" />
+<style>
+html, body, #cesiumContainer {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #081a2b;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0,0,0,0.55);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  font-size: 14px;
+}
+
+#title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+
+.stat {
+  margin: 2px 0;
+}
+</style>
 </head>
+
 <body>
-  <h1>🎅 Santa Tracker</h1>
+<div id="cesiumContainer"></div>
 
-  <div id="info">
-    <p>📍 Location: <span id="location">Loading...</span></p>
-    <p>🎁 Gifts Delivered: <span id="gifts">0</span></p>
-  </div>
+<div id="hud">
+  <div id="title">🎅 Santa Tracker</div>
+  <div class="stat">Stops: <span id="stops">—</span></div>
+  <div class="stat">Visited: <span id="visited">0</span></div>
+  <div class="stat">Gifts: <span id="gifts">0</span></div>
+</div>
 
-  <div id="cesiumContainer"></div>
+<script>
+/* ==============================
+   CONFIG
+================================ */
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
-  <script src="script.js"></script>
+const MIN_STOPS = 300;
+const MAX_STOPS = 500;
+const TOTAL_SECONDS = 24 * 60 * 60;
+const FLIGHT_HEIGHT = 320000;
+
+/* ==============================
+   VIEWER
+================================ */
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  animation: false,
+  timeline: false,
+  baseLayerPicker: false,
+  geocoder: false,
+  homeButton: false,
+  sceneModePicker: false,
+  navigationHelpButton: false,
+  fullscreenButton: false,
+  shouldAnimate: true
+});
+
+viewer.scene.globe.depthTestAgainstTerrain = false;
+viewer.camera.percentageChanged = 0.005;
+viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
+
+/* ==============================
+   ROUTE GENERATION
+================================ */
+const stops = Math.floor(Math.random() * (MAX_STOPS - MIN_STOPS + 1)) + MIN_STOPS;
+document.getElementById("stops").textContent = stops;
+
+const secondsPerStop = TOTAL_SECONDS / stops;
+const path = new Cesium.SampledPositionProperty();
+const startTime = Cesium.JulianDate.now();
+
+for (let i = 0; i < stops; i++) {
+  const t = Cesium.JulianDate.addSeconds(
+    startTime,
+    i * secondsPerStop,
+    new Cesium.JulianDate()
+  );
+
+  const lat = Cesium.Math.lerp(-55, 70, Math.random());
+  const lon = Cesium.Math.lerp(-180, 180, Math.random());
+
+  path.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, FLIGHT_HEIGHT));
+}
+
+/* ==============================
+   SANTA (RED DOT)
+================================ */
+const santa = viewer.entities.add({
+  position: path,
+  point: {
+    pixelSize: 10,
+    color: Cesium.Color.RED,
+    outlineColor: Cesium.Color.WHITE,
+    outlineWidth: 1,
+    disableDepthTestDistance: Number.POSITIVE_INFINITY
+  }
+});
+
+viewer.trackedEntity = santa;
+
+/* ==============================
+   PATH LINE (SUBTLE)
+================================ */
+viewer.entities.add({
+  polyline: {
+    positions: path,
+    width: 1.5,
+    material: Cesium.Color.RED.withAlpha(0.35)
+  }
+});
+
+/* ==============================
+   CLOCK (24 HOURS REAL TIME)
+================================ */
+viewer.clock.startTime = startTime.clone();
+viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime, TOTAL_SECONDS, new Cesium.JulianDate());
+viewer.clock.currentTime = startTime.clone();
+viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+viewer.clock.multiplier = 1;
+
+/* ==============================
+   CINEMATIC CAMERA
+================================ */
+let mode = "WIDE";
+let lastSwitch = 0;
+
+viewer.scene.postRender.addEventListener(() => {
+  const time = viewer.clock.currentTime;
+  const pos = santa.position.getValue(time);
+  if (!pos) return;
+
+  const elapsed = Cesium.JulianDate.secondsDifference(time, startTime);
+
+  if (elapsed - lastSwitch > 45) {
+    mode = mode === "WIDE" ? "CLOSE" : "WIDE";
+    lastSwitch = elapsed;
+  }
+
+  const height = Cesium.Cartographic.fromCartesian(pos).height;
+  let dist = mode === "WIDE"
+    ? Cesium.Math.clamp(height * 9, 3_500_000, 8_000_000)
+    : Cesium.Math.clamp(height * 4, 900_000, 2_500_000);
+
+  viewer.camera.lookAt(
+    pos,
+    new Cesium.Cartesian3(-dist, dist * 0.4, dist * 0.5)
+  );
+});
+
+/* ==============================
+   STATS
+================================ */
+viewer.clock.onTick.addEventListener(() => {
+  const elapsed = Cesium.JulianDate.secondsDifference(
+    viewer.clock.currentTime,
+    startTime
+  );
+
+  const visited = Math.min(Math.floor(elapsed / secondsPerStop), stops);
+  document.getElementById("visited").textContent = visited.toLocaleString();
+  document.getElementById("gifts").textContent = (visited * 12000).toLocaleString();
+});
+</script>
 </body>
 </html>
