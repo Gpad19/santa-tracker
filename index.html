@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - iPad Friendly</title>
+<title>Santa Tracker - Sequential Stops</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
@@ -40,7 +40,7 @@ html, body, #cesiumContainer { width:100%; height:100%; margin:0; background:#08
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
 // -------------------------
-// Optimized ~150 countries x 2 cities (~300 stops)
+// Optimized ~150 countries × 2 cities (~300 stops)
 // -------------------------
 const WORLD_ROUTE = [
   { country:"United States", cities:[["New York",40.7128,-74.0060],["Los Angeles",34.0522,-118.2437]] },
@@ -53,7 +53,7 @@ const WORLD_ROUTE = [
   { country:"Australia", cities:[["Sydney",-33.86882,151.20929],["Melbourne",-37.81361,144.96306]] },
   { country:"India", cities:[["Delhi",28.7041,77.1025],["Mumbai",19.0760,72.8777]] },
   { country:"China", cities:[["Beijing",39.9042,116.4074],["Shanghai",31.2304,121.4737]] }
-  // Add more until ~150 countries
+  // Add more countries to reach ~150
 ];
 
 let stops = [];
@@ -64,7 +64,7 @@ document.getElementById("stops").textContent = stops.length;
 const FLIGHT_HEIGHT = 40000;
 
 // -------------------------
-// Cesium Viewer
+// Initialize Cesium
 // -------------------------
 const viewer = new Cesium.Viewer("cesiumContainer", {
   timeline:false, animation:false, baseLayerPicker:false,
@@ -74,28 +74,37 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 
 // Enable full free camera movement
 const c = viewer.scene.screenSpaceCameraController;
-c.enableRotate=true; c.enableZoom=true; c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
+c.enableRotate=true; c.enableZoom=true;
+c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
 
+// -------------------------
+// Santa entity with sequential positions
+// -------------------------
 const santaPosition = new Cesium.SampledPositionProperty();
 const startTime = Cesium.JulianDate.now();
-const secondsPerStop = 24*60*60 / stops.length;
+const totalSeconds = 24*60*60; // 24 hours
+const secondsPerStop = totalSeconds / stops.length;
 
+// Add each stop sequentially
 stops.forEach((stop,i)=>{
-  const t = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
+  const t = Cesium.JulianDate.addSeconds(startTime, i*secondsPerStop, new Cesium.JulianDate());
   santaPosition.addSample(t, Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT));
+  // Create point entities for stops
   stop.entity = viewer.entities.add({
     position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
     point: { pixelSize:5, color:Cesium.Color.DARKGRAY, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
   });
 });
 
+// Santa entity
 const santa = viewer.entities.add({
   position: santaPosition,
   point: { pixelSize:10, color:Cesium.Color.RED, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
 });
 
+// Set Cesium clock
 viewer.clock.startTime = startTime.clone();
-viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,24*60*60,new Cesium.JulianDate());
+viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,totalSeconds,new Cesium.JulianDate());
 viewer.clock.currentTime = startTime.clone();
 viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
 viewer.clock.multiplier = 1;
@@ -108,7 +117,7 @@ document.getElementById("snapButton").addEventListener("click", ()=>{
   viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000), {duration:1.5});
 });
 
-// Registered stops like NORAD
+// Register stops when Santa arrives
 viewer.clock.onTick.addEventListener(()=>{
   const santaPos = santa.position.getValue(viewer.clock.currentTime);
   stops.forEach(stop=>{
