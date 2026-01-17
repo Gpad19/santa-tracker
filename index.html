@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Tracker - Free Camera</title>
+<title>Santa Tracker - iPad Friendly</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
 
 <style>
-html, body, #cesiumContainer {
-  width:100%; height:100%; margin:0; background:#081a2b;
-  overflow:hidden; font-family:system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
+html, body, #cesiumContainer { width:100%; height:100%; margin:0; background:#081a2b; overflow:hidden; font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif; }
 #hud {
   position:absolute; top:12px; left:12px; background:rgba(0,0,0,0.55);
   color:white; padding:12px 16px; border-radius:10px;
@@ -43,7 +40,7 @@ html, body, #cesiumContainer {
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
 // -------------------------
-// Optimized WORLD TOUR: ~150 countries × 2 major cities (~300 stops)
+// Optimized ~150 countries x 2 cities (~300 stops)
 // -------------------------
 const WORLD_ROUTE = [
   { country:"United States", cities:[["New York",40.7128,-74.0060],["Los Angeles",34.0522,-118.2437]] },
@@ -55,110 +52,78 @@ const WORLD_ROUTE = [
   { country:"Japan", cities:[["Tokyo",35.6895,139.6917],["Osaka",34.6937,135.5023]] },
   { country:"Australia", cities:[["Sydney",-33.86882,151.20929],["Melbourne",-37.81361,144.96306]] },
   { country:"India", cities:[["Delhi",28.7041,77.1025],["Mumbai",19.0760,72.8777]] },
-  { country:"China", cities:[["Beijing",39.9042,116.4074],["Shanghai",31.2304,121.4737]] },
-  { country:"Russia", cities:[["Moscow",55.7558,37.6173],["Saint Petersburg",59.9311,30.3609]] },
-  { country:"Mexico", cities:[["Mexico City",19.4326,-99.1332],["Guadalajara",20.6597,-103.3496]] },
-  { country:"Italy", cities:[["Rome",41.9028,12.4964],["Milan",45.4642,9.19]] },
-  { country:"Spain", cities:[["Madrid",40.4168,-3.7038],["Barcelona",41.3851,2.1734]] },
-  { country:"South Africa", cities:[["Johannesburg",-26.2041,28.0473],["Cape Town",-33.9249,18.4241]] },
-  { country:"Egypt", cities:[["Cairo",30.0444,31.2357],["Alexandria",31.2001,29.9187]] },
-  { country:"Turkey", cities:[["Ankara",39.9334,32.8597],["Istanbul",41.0082,28.9784]] },
-  { country:"Saudi Arabia", cities:[["Riyadh",24.7136,46.6753],["Jeddah",21.4858,39.1925]] },
-  { country:"Argentina", cities:[["Buenos Aires",-34.6037,-58.3816],["Córdoba",-31.4201,-64.1888]] },
-  { country:"South Korea", cities:[["Seoul",37.5665,126.978],["Busan",35.1796,129.0756]] },
-  { country:"Thailand", cities:[["Bangkok",13.7563,100.5018],["Chiang Mai",18.7883,98.9853]] },
-  { country:"Vietnam", cities:[["Hanoi",21.0278,105.8342],["Ho Chi Minh City",10.7769,106.7009]] },
-  { country:"Indonesia", cities:[["Jakarta",-6.2088,106.8456],["Surabaya",-7.2575,112.7521]] },
-  { country:"Philippines", cities:[["Manila",14.5995,120.9842],["Cebu",10.3157,123.8854]] },
-  { country:"Nigeria", cities:[["Lagos",6.5244,3.3792],["Abuja",9.0578,7.4951]] },
-  { country:"Kenya", cities:[["Nairobi",-1.2921,36.8219],["Mombasa",-4.0435,39.6682]] },
-  { country:"Greece", cities:[["Athens",37.9838,23.7275],["Thessaloniki",40.6401,22.9444]] },
-  { country:"Poland", cities:[["Warsaw",52.2297,21.0122],["Kraków",50.0647,19.9450]] },
-  { country:"Netherlands", cities:[["Amsterdam",52.3676,4.9041],["Rotterdam",51.9244,4.4777]] },
-  { country:"Belgium", cities:[["Brussels",50.8503,4.3517],["Antwerp",51.2194,4.4025]] },
-  { country:"Sweden", cities:[["Stockholm",59.3293,18.0686],["Gothenburg",57.7089,11.9746]] },
-  { country:"Norway", cities:[["Oslo",59.9139,10.7522],["Bergen",60.3913,5.3221]] },
-  { country:"Finland", cities:[["Helsinki",60.1699,24.9384],["Espoo",60.2055,24.6559]] },
-  { country:"Portugal", cities:[["Lisbon",38.7169,-9.1395],["Porto",41.1496,-8.611]] },
-  // Add more countries to reach ~150 total
+  { country:"China", cities:[["Beijing",39.9042,116.4074],["Shanghai",31.2304,121.4737]] }
+  // Add more until ~150 countries
 ];
 
 let stops = [];
-WORLD_ROUTE.forEach(c => {
-  c.cities.forEach(city => {
-    stops.push({ country:c.country, name:city[0], lat:city[1], lon:city[2], entity:null, visited:false });
-  });
-});
-
+WORLD_ROUTE.forEach(c => c.cities.forEach(city => {
+  stops.push({ country:c.country, name:city[0], lat:city[1], lon:city[2], entity:null, visited:false });
+}));
 document.getElementById("stops").textContent = stops.length;
 const FLIGHT_HEIGHT = 40000;
 
 // -------------------------
-// Initialize Cesium
+// Cesium Viewer
 // -------------------------
-(function initCesium() {
-  const viewer = new Cesium.Viewer("cesiumContainer", {
-    timeline:false, animation:false, baseLayerPicker:false,
-    geocoder:false, homeButton:false, sceneModePicker:false,
-    fullscreenButton:false, navigationHelpButton:false, shouldAnimate:true
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  timeline:false, animation:false, baseLayerPicker:false,
+  geocoder:false, homeButton:false, sceneModePicker:false,
+  fullscreenButton:false, navigationHelpButton:false, shouldAnimate:true
+});
+
+// Enable full free camera movement
+const c = viewer.scene.screenSpaceCameraController;
+c.enableRotate=true; c.enableZoom=true; c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
+
+const santaPosition = new Cesium.SampledPositionProperty();
+const startTime = Cesium.JulianDate.now();
+const secondsPerStop = 24*60*60 / stops.length;
+
+stops.forEach((stop,i)=>{
+  const t = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
+  santaPosition.addSample(t, Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT));
+  stop.entity = viewer.entities.add({
+    position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
+    point: { pixelSize:5, color:Cesium.Color.DARKGRAY, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
   });
+});
 
-  viewer.scene.globe.depthTestAgainstTerrain = false;
+const santa = viewer.entities.add({
+  position: santaPosition,
+  point: { pixelSize:10, color:Cesium.Color.RED, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
+});
 
-  const santaPosition = new Cesium.SampledPositionProperty();
-  const startTime = Cesium.JulianDate.now();
-  const secondsPerStop = 24*60*60 / stops.length;
+viewer.clock.startTime = startTime.clone();
+viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,24*60*60,new Cesium.JulianDate());
+viewer.clock.currentTime = startTime.clone();
+viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+viewer.clock.multiplier = 1;
+viewer.clock.shouldAnimate = true;
 
-  stops.forEach((stop,i)=>{
-    const t = Cesium.JulianDate.addSeconds(startTime,i*secondsPerStop,new Cesium.JulianDate());
-    santaPosition.addSample(t, Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT));
-    stop.entity = viewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT),
-      point: { pixelSize:5, color:Cesium.Color.DARKGRAY, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
-    });
+// Snap-to-Santa button
+document.getElementById("snapButton").addEventListener("click", ()=>{
+  const pos = santa.position.getValue(viewer.clock.currentTime);
+  if(!pos) return;
+  viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000), {duration:1.5});
+});
+
+// Registered stops like NORAD
+viewer.clock.onTick.addEventListener(()=>{
+  const santaPos = santa.position.getValue(viewer.clock.currentTime);
+  stops.forEach(stop=>{
+    if(stop.visited) return;
+    const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT);
+    if(santaPos && Cesium.Cartesian3.distance(santaPos,stopPos)<20000){
+      stop.visited = true;
+      stop.entity.point.color = Cesium.Color.LIME;
+      stop.entity.point.pixelSize = 8;
+      document.getElementById("visited").textContent = stops.filter(s=>s.visited).length;
+      document.getElementById("country").textContent = stop.country;
+      document.getElementById("city").textContent = stop.name;
+    }
   });
-
-  const santa = viewer.entities.add({
-    position: santaPosition,
-    point: { pixelSize:10, color:Cesium.Color.RED, outlineColor:Cesium.Color.WHITE, outlineWidth:1 }
-  });
-
-  viewer.clock.startTime = startTime.clone();
-  viewer.clock.stopTime = Cesium.JulianDate.addSeconds(startTime,24*60*60,new Cesium.JulianDate());
-  viewer.clock.currentTime = startTime.clone();
-  viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
-  viewer.clock.multiplier = 1;
-  viewer.clock.shouldAnimate = true;
-
-  // Enable full free camera movement
-  const c = viewer.scene.screenSpaceCameraController;
-  c.enableRotate=true; c.enableZoom=true;
-  c.enableTranslate=true; c.enableTilt=true; c.enableLook=true;
-
-  // Snap to Santa
-  document.getElementById("snapButton").addEventListener("click", ()=>{
-    const pos = santa.position.getValue(viewer.clock.currentTime);
-    if(!pos) return;
-    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(pos,40000), {duration:1.5});
-  });
-
-  // Registered stops like NORAD
-  viewer.clock.onTick.addEventListener(()=>{
-    const santaPos = santa.position.getValue(viewer.clock.currentTime);
-    stops.forEach(stop=>{
-      if(stop.visited) return;
-      const stopPos = Cesium.Cartesian3.fromDegrees(stop.lon, stop.lat, FLIGHT_HEIGHT);
-      if(santaPos && Cesium.Cartesian3.distance(santaPos,stopPos)<20000){
-        stop.visited = true;
-        stop.entity.point.color = Cesium.Color.LIME;
-        stop.entity.point.pixelSize = 8;
-        document.getElementById("visited").textContent = stops.filter(s=>s.visited).length;
-        document.getElementById("country").textContent = stop.country;
-        document.getElementById("city").textContent = stop.name;
-      }
-    });
-  });
-})();
+});
 </script>
 </body>
 </html>
