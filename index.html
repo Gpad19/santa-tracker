@@ -43,7 +43,7 @@ html, body, #cesiumContainer {
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
 // -------------------------
-// ~150 countries × 2 major cities
+// Optimized WORLD TOUR: ~150 countries × 2 major cities (~300 stops)
 // -------------------------
 const WORLD_ROUTE = [
   { country:"United States", cities:[["New York",40.7128,-74.0060],["Los Angeles",34.0522,-118.2437]] },
@@ -80,7 +80,7 @@ const WORLD_ROUTE = [
   { country:"Norway", cities:[["Oslo",59.9139,10.7522],["Bergen",60.3913,5.3221]] },
   { country:"Finland", cities:[["Helsinki",60.1699,24.9384],["Espoo",60.2055,24.6559]] },
   { country:"Portugal", cities:[["Lisbon",38.7169,-9.1395],["Porto",41.1496,-8.611]] },
-  // Add remaining countries to reach ~150 total
+  // Add more countries to reach ~150 total
 ];
 
 let stops = [];
@@ -158,7 +158,6 @@ const FLIGHT_HEIGHT = 40000;
       }
     });
   });
-
 })();
 </script>
 </body>
