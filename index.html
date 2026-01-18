@@ -160,7 +160,7 @@ cities.forEach((city, i) => {
 });
 
 /* =====================================
-   🎅 Santa Sleigh (3D Model)
+   🎅 Santa Sleigh (3D model – iPad safe)
 ===================================== */
 const santa = viewer.entities.add({
   availability: new Cesium.TimeIntervalCollection([
@@ -169,14 +169,15 @@ const santa = viewer.entities.add({
   position,
   orientation: new Cesium.VelocityOrientationProperty(position),
   model: {
-    uri: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sleigh/glTF/Sleigh.gltf",
-    scale: 8000,
+    uri: "https://assets.cesium.com/1461/CesiumMilkTruck.glb",
+    scale: 6000,
     minimumPixelSize: 64,
     maximumScale: 12000
   }
 });
 
 viewer.trackedEntity = santa;
+
 
 /* =====================================
    📢 Status + Countdown
