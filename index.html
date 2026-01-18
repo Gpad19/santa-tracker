@@ -44,7 +44,7 @@
 
 <script>
   // =====================================
-  // 🔑 Cesium ion token
+  // 🔑 Cesium ion Access Token
   // =====================================
   Cesium.Ion.defaultAccessToken =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
@@ -102,7 +102,7 @@
   const travelPerLeg = travelSeconds / (cities.length - 1);
 
   // =====================================
-  // 📍 Santa movement (arrive → stop → depart)
+  // 📍 Build Santa / Sleigh path
   // =====================================
   const position = new Cesium.SampledPositionProperty();
   let currentTime = santaStart.clone();
@@ -138,21 +138,23 @@
   });
 
   // =====================================
-  // 🎅 Santa entity
+  // 🛷 Santa Sleigh entity (moves along arcs)
   // =====================================
-  const santa = viewer.entities.add({
+  const sleigh = viewer.entities.add({
     availability: new Cesium.TimeIntervalCollection([
       new Cesium.TimeInterval({ start: santaStart, stop: santaEnd })
     ]),
     position,
     orientation: new Cesium.VelocityOrientationProperty(position),
     model: {
-      uri: "https://cdn.jsdelivr.net/gh/AnalyticalGraphicsInc/cesium-assets@master/models/CesiumMan/Cesium_Man.glb",
-      minimumPixelSize: 64
+      // Lightweight glTF 2.0 sleigh (iPad compatible)
+      uri: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/ToyCar/glTF/ToyCar.gltf",
+      minimumPixelSize: 96,
+      maximumScale: 200
     }
   });
 
-  viewer.trackedEntity = santa;
+  viewer.trackedEntity = sleigh;
 
   // =====================================
   // 🌍 Great-circle flight arcs
@@ -167,13 +169,14 @@
     const steps = 64;
 
     for (let i = 0; i <= steps; i++) {
-      const frac = i / steps;
-      const carto = geodesic.interpolateUsingFraction(frac);
+      const f = i / steps;
+      const c = geodesic.interpolateUsingFraction(f);
+
       points.push(
         Cesium.Cartesian3.fromRadians(
-          carto.longitude,
-          carto.latitude,
-          300000 + Math.sin(Math.PI * frac) * 200000
+          c.longitude,
+          c.latitude,
+          300000 + Math.sin(Math.PI * f) * 200000
         )
       );
     }
@@ -183,7 +186,7 @@
         positions: points,
         width: 2,
         material: new Cesium.PolylineGlowMaterialProperty({
-          glowPower: 0.2,
+          glowPower: 0.25,
           color: Cesium.Color.RED
         })
       }
@@ -195,15 +198,17 @@
   }
 
   // =====================================
-  // 📢 Status display
+  // ⏱ Real-time UTC clock
   // =====================================
-  const info = document.getElementById("info");
-  let lastState = "";
-
   viewer.clock.startTime = santaStart.clone();
   viewer.clock.stopTime = santaEnd.clone();
   viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+
+  // =====================================
+  // 📢 Status display
+  // =====================================
+  const info = document.getElementById("info");
 
   viewer.clock.onTick.addEventListener(clock => {
     const now = clock.currentTime;
@@ -220,11 +225,8 @@
 
     for (let i = cities.length - 1; i >= 0; i--) {
       if (Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now)) {
-        if (lastState !== cities[i].name) {
-          lastState = cities[i].name;
-          info.innerHTML =
-            `🎅 Santa is in<br><strong>${cities[i].name}</strong>`;
-        }
+        info.innerHTML =
+          `🎅 Santa is in<br><strong>${cities[i].name}</strong>`;
         break;
       }
     }
