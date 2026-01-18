@@ -89,7 +89,7 @@ const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T11:00:00Z");
 const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-25T11:00:00Z");
 
 /* =====================================
-   🏙 Cities (East → West)
+   🏙 Cities
 ===================================== */
 const cities = [
   { name: "North Pole", lon: -135, lat: 90, stop: 180 },
@@ -148,9 +148,8 @@ const cities = [
   { name: "North Pole", lon: -135, lat: 90, stop: 180 }
 ];
 
-
 /* =====================================
-   🧮 Timing math
+   🧮 Timing
 ===================================== */
 const totalSeconds =
   Cesium.JulianDate.secondsDifference(santaEnd, santaStart);
@@ -162,7 +161,7 @@ const travelPerLeg =
   (totalSeconds - totalStopSeconds) / (cities.length - 1);
 
 /* =====================================
-   📍 Path
+   📍 Movement path
 ===================================== */
 const position = new Cesium.SampledPositionProperty();
 let t = santaStart.clone();
@@ -206,7 +205,7 @@ cities.forEach((city, i) => {
 });
 
 /* =====================================
-   🎅 Santa
+   🎅 Santa entity (NO PATH)
 ===================================== */
 const santa = viewer.entities.add({
   availability: new Cesium.TimeIntervalCollection([
@@ -220,8 +219,7 @@ const santa = viewer.entities.add({
     outlineWidth: 2
   },
   path: {
-    width: 2,
-    material: Cesium.Color.RED
+    show: false
   }
 });
 
@@ -258,24 +256,21 @@ viewer.clock.onTick.addEventListener(clock => {
     return;
   }
 
-  for (let i = 0; i < cities.length; i++) {
+  for (let i = 0; i < cities.length - 1; i++) {
     if (
       Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now) &&
-      (i === cities.length - 1 ||
-       Cesium.JulianDate.greaterThan(cities[i + 1].arrival, now))
+      Cesium.JulianDate.greaterThan(cities[i + 1].arrival, now)
     ) {
       const next = cities[i + 1];
-      if (next) {
-        const seconds =
-          Cesium.JulianDate.secondsDifference(next.arrival, now);
+      const seconds =
+        Cesium.JulianDate.secondsDifference(next.arrival, now);
 
-        info.innerHTML = `
-          🎅 Santa is in<br>
-          <strong>${cities[i].name}</strong><br><br>
-          🎯 Next stop: <strong>${next.name}</strong><br>
-          ⏳ Arrival in: <strong>${formatCountdown(seconds)}</strong>
-        `;
-      }
+      info.innerHTML = `
+        🎅 Santa is in<br>
+        <strong>${cities[i].name}</strong><br><br>
+        🎯 Next stop: <strong>${next.name}</strong><br>
+        ⏳ Arrival in: <strong>${formatCountdown(seconds)}</strong>
+      `;
       break;
     }
   }
@@ -285,17 +280,7 @@ viewer.clock.onTick.addEventListener(clock => {
    🎥 Zoom button
 ===================================== */
 document.getElementById("zoomSanta").onclick = () => {
-  const pos = santa.position.getValue(viewer.clock.currentTime);
-  if (!pos) return;
-
-  viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.multiplyByScalar(
-      Cesium.Cartesian3.normalize(pos, new Cesium.Cartesian3()),
-      Cesium.Cartesian3.magnitude(pos) + 1_000_000,
-      new Cesium.Cartesian3()
-    ),
-    duration: 2.5
-  });
+  viewer.trackedEntity = santa;
 };
 
 /* =====================================
