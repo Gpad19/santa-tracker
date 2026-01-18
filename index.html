@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <title>Santa Tracker 🎅</title>
 
-  <!-- Mobile / iPad support -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- iPad / Mobile support -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- Cesium -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
@@ -21,18 +22,17 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      touch-action: none;
     }
 
     #infoPanel {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.65);
       color: white;
       padding: 10px 14px;
       border-radius: 8px;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      font-family: system-ui, -apple-system;
       font-size: 14px;
       z-index: 10;
     }
@@ -48,9 +48,12 @@
 </div>
 
 <script>
-  // Cesium access token (public demo token)
-  Cesium.Ion.defaultAccessToken = "YOUR_CESIUM_ION_TOKEN_OPTIONAL";
+  // ================================
+  // 🔑 REQUIRED: Cesium ion Access Token
+  // ================================
+  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
+  // Viewer setup
   const viewer = new Cesium.Viewer("cesiumContainer", {
     animation: false,
     timeline: false,
@@ -65,13 +68,14 @@
     shouldAnimate: true
   });
 
-  // Improve performance on iPad
+  // Improve appearance & iPad performance
   viewer.scene.globe.enableLighting = true;
   viewer.scene.requestRenderMode = true;
+  viewer.scene.maximumRenderTimeChange = Infinity;
 
-  // Sample Santa route (lon, lat)
+  // Santa route (lon, lat)
   const route = [
-    [-135, 90],    // North Pole
+    [-135, 90],   // North Pole
     [-100, 60],
     [-75, 40],
     [-40, 30],
@@ -82,7 +86,11 @@
   ];
 
   const start = Cesium.JulianDate.now();
-  const stop = Cesium.JulianDate.addSeconds(start, route.length * 5, new Cesium.JulianDate());
+  const stop = Cesium.JulianDate.addSeconds(
+    start,
+    route.length * 6,
+    new Cesium.JulianDate()
+  );
 
   viewer.clock.startTime = start.clone();
   viewer.clock.stopTime = stop.clone();
@@ -93,7 +101,12 @@
   const position = new Cesium.SampledPositionProperty();
 
   route.forEach((coord, index) => {
-    const time = Cesium.JulianDate.addSeconds(start, index * 5, new Cesium.JulianDate());
+    const time = Cesium.JulianDate.addSeconds(
+      start,
+      index * 6,
+      new Cesium.JulianDate()
+    );
+
     position.addSample(
       time,
       Cesium.Cartesian3.fromDegrees(coord[0], coord[1], 300000)
@@ -108,8 +121,7 @@
     orientation: new Cesium.VelocityOrientationProperty(position),
     model: {
       uri: "https://cdn.jsdelivr.net/gh/AnalyticalGraphicsInc/cesium-assets@master/models/CesiumMan/Cesium_Man.glb",
-      minimumPixelSize: 64,
-      maximumScale: 200
+      minimumPixelSize: 64
     },
     path: {
       width: 3,
@@ -119,9 +131,8 @@
 
   viewer.trackedEntity = santa;
 
-  // Initial camera view
   viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(-135, 80, 2000000)
+    destination: Cesium.Cartesian3.fromDegrees(-135, 80, 2_500_000)
   });
 </script>
 
