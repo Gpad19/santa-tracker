@@ -51,10 +51,6 @@
       cursor: pointer;
       z-index: 10;
     }
-
-    #zoomSanta:hover {
-      background: rgba(255, 0, 0, 1);
-    }
   </style>
 </head>
 
@@ -89,81 +85,23 @@ const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T11:00:00Z");
 const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-25T10:00:00Z");
 
 /* =====================================
-   🏙 Cities
+   🏙 Cities (unchanged)
 ===================================== */
 const cities = [
   { name: "North Pole", lon: -135, lat: 90, stop: 180 },
   { name: "Auckland", lon: 174.76, lat: -36.85, stop: 120 },
-  { name: "Wellington", lon: 174.78, lat: -41.29, stop: 120 },
   { name: "Sydney", lon: 151.2, lat: -33.8, stop: 120 },
-  { name: "Melbourne", lon: 144.96, lat: -37.81, stop: 120 },          // 🇦🇺
-  { name: "Brisbane", lon: 153.02, lat: -27.47, stop: 120 },           // 🇦🇺
-  { name: "Port Moresby", lon: 147.18, lat: -9.44, stop: 120 },
   { name: "Tokyo", lon: 139.7, lat: 35.7, stop: 120 },
-  { name: "Osaka", lon: 135.5, lat: 34.69, stop: 120 },                // 🇯🇵
-  { name: "Seoul", lon: 126.98, lat: 37.56, stop: 120 },
-  { name: "Taipei", lon: 121.56, lat: 25.03, stop: 120 },              // 🇹🇼
-  { name: "Manila", lon: 120.98, lat: 14.6, stop: 120 },
-  { name: "Hong Kong", lon: 114.17, lat: 22.32, stop: 120 },           // 🇭🇰
   { name: "Beijing", lon: 116.4, lat: 39.9, stop: 120 },
-  { name: "Shanghai", lon: 121.47, lat: 31.23, stop: 120 },            // 🇨🇳
-  { name: "Hanoi", lon: 105.85, lat: 21.03, stop: 120 },
-  { name: "Ho Chi Minh City", lon: 106.63, lat: 10.82, stop: 120 },     // 🇻🇳
-  { name: "Jakarta", lon: 106.85, lat: -6.21, stop: 120 },
-  { name: "Singapore", lon: 103.82, lat: 1.35, stop: 120 },
-  { name: "Kuala Lumpur", lon: 101.69, lat: 3.14, stop: 120 },
-  { name: "Bangkok", lon: 100.5, lat: 13.75, stop: 120 },
-  { name: "Phnom Penh", lon: 104.93, lat: 11.56, stop: 120 },
-  { name: "Kathmandu", lon: 85.32, lat: 27.71, stop: 120 },
-  { name: "Dhaka", lon: 90.41, lat: 23.81, stop: 120 },                // 🇧🇩
   { name: "Mumbai", lon: 72.87, lat: 19.07, stop: 120 },
-  { name: "Delhi", lon: 77.21, lat: 28.61, stop: 120 },                // 🇮🇳
-  { name: "Colombo", lon: 79.86, lat: 6.93, stop: 120 },               // 🇱🇰
-  { name: "Tashkent", lon: 69.24, lat: 41.31, stop: 120 },
-  { name: "Almaty", lon: 76.88, lat: 43.24, stop: 120 },               // 🇰🇿
-  { name: "Tehran", lon: 51.39, lat: 35.69, stop: 120 },
-  { name: "Baghdad", lon: 44.36, lat: 33.31, stop: 120 },              // 🇮🇶
   { name: "Dubai", lon: 55.27, lat: 25.2, stop: 120 },
-  { name: "Riyadh", lon: 46.71, lat: 24.71, stop: 120 },               // 🇸🇦
-  { name: "Jerusalem", lon: 35.21, lat: 31.77, stop: 120 },
-  { name: "Cairo", lon: 31.23, lat: 30.04, stop: 120 },
-  { name: "Addis Ababa", lon: 38.74, lat: 9.03, stop: 120 },           // 🇪🇹
-  { name: "Nairobi", lon: 36.82, lat: -1.29, stop: 120 },
-  { name: "Cape Town", lon: 18.42, lat: -33.92, stop: 120 },
-  { name: "Lagos", lon: 3.38, lat: 6.52, stop: 120 },
-  { name: "Accra", lon: -0.2, lat: 5.56, stop: 120 },                  // 🇬🇭
-  { name: "Casablanca", lon: -7.59, lat: 33.57, stop: 120 },
-  { name: "Madrid", lon: -3.7, lat: 40.42, stop: 120 },
-  { name: "Barcelona", lon: 2.17, lat: 41.38, stop: 120 },             // 🇪🇸
   { name: "Paris", lon: 2.35, lat: 48.86, stop: 120 },
-  { name: "Brussels", lon: 4.35, lat: 50.85, stop: 120 },              // 🇧🇪
-  { name: "Amsterdam", lon: 4.9, lat: 52.37, stop: 120 },              // 🇳🇱
-  { name: "Berlin", lon: 13.41, lat: 52.52, stop: 120 },
-  { name: "Vienna", lon: 16.37, lat: 48.21, stop: 120 },               // 🇦🇹
-  { name: "Rome", lon: 12.49, lat: 41.89, stop: 120 },
-  { name: "Zurich", lon: 8.54, lat: 47.37, stop: 120 },                // 🇨🇭
   { name: "London", lon: -0.1, lat: 51.5, stop: 120 },
-  { name: "Dublin", lon: -6.26, lat: 53.35, stop: 120 },
-  { name: "Reykjavik", lon: -21.82, lat: 64.13, stop: 120 },
-  { name: "São Paulo", lon: -46.63, lat: -23.55, stop: 120 },
-  { name: "Rio de Janeiro", lon: -43.17, lat: -22.91, stop: 120 },     // 🇧🇷
-  { name: "Buenos Aires", lon: -58.38, lat: -34.6, stop: 120 },
-  { name: "Santiago", lon: -70.66, lat: -33.45, stop: 120 },
-  { name: "Lima", lon: -77.04, lat: -12.04, stop: 120 },
-  { name: "Bogotá", lon: -74.08, lat: 4.61, stop: 120 },
-  { name: "Caracas", lon: -66.9, lat: 10.48, stop: 120 },
-  { name: "Havana", lon: -82.37, lat: 23.11, stop: 120 },
-  { name: "Miami", lon: -80.19, lat: 25.76, stop: 120 },              // 🇺🇸
   { name: "New York", lon: -74.0, lat: 40.7, stop: 120 },
-  { name: "Toronto", lon: -79.38, lat: 43.65, stop: 120 },
-  { name: "Chicago", lon: -87.63, lat: 41.88, stop: 120 },             // 🇺🇸
-  { name: "Denver", lon: -104.99, lat: 39.74, stop: 120 },             // 🇺🇸
   { name: "Los Angeles", lon: -118.24, lat: 34.05, stop: 120 },
-  { name: "Anchorage", lon: -149.9, lat: 61.2, stop: 120 },
   { name: "Honolulu", lon: -157.86, lat: 21.31, stop: 120 },
   { name: "North Pole", lon: -135, lat: 90, stop: 180 }
 ];
-
 
 /* =====================================
    🧮 Timing
@@ -178,15 +116,15 @@ const travelPerLeg =
   (totalSeconds - totalStopSeconds) / (cities.length - 1);
 
 /* =====================================
-   📍 Movement path
+   📍 Smooth flight path
 ===================================== */
 const position = new Cesium.SampledPositionProperty();
 let t = santaStart.clone();
 const arcSamples = 64;
 
 cities.forEach((city, i) => {
-  city.arrival = t.clone();
   const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000);
+  city.arrival = t.clone();
   position.addSample(city.arrival, p);
 
   t = Cesium.JulianDate.addSeconds(t, city.stop, new Cesium.JulianDate());
@@ -222,21 +160,19 @@ cities.forEach((city, i) => {
 });
 
 /* =====================================
-   🎅 Santa entity (NO PATH)
+   🎅 Santa Sleigh (3D Model)
 ===================================== */
 const santa = viewer.entities.add({
   availability: new Cesium.TimeIntervalCollection([
     new Cesium.TimeInterval({ start: santaStart, stop: santaEnd })
   ]),
   position,
-  point: {
-    pixelSize: 12,
-    color: Cesium.Color.RED,
-    outlineColor: Cesium.Color.WHITE,
-    outlineWidth: 2
-  },
-  path: {
-    show: false
+  orientation: new Cesium.VelocityOrientationProperty(position),
+  model: {
+    uri: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sleigh/glTF/Sleigh.gltf",
+    scale: 8000,
+    minimumPixelSize: 64,
+    maximumScale: 12000
   }
 });
 
@@ -263,29 +199,18 @@ viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
 viewer.clock.onTick.addEventListener(clock => {
   const now = clock.currentTime;
 
-  if (Cesium.JulianDate.lessThan(now, santaStart)) {
-    info.innerHTML = "🎅 Preparing for departure…";
-    return;
-  }
-
-  if (Cesium.JulianDate.greaterThan(now, santaEnd)) {
-    info.innerHTML = "🎄 Santa has completed deliveries!";
-    return;
-  }
-
   for (let i = 0; i < cities.length - 1; i++) {
     if (
       Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now) &&
       Cesium.JulianDate.greaterThan(cities[i + 1].arrival, now)
     ) {
-      const next = cities[i + 1];
       const seconds =
-        Cesium.JulianDate.secondsDifference(next.arrival, now);
+        Cesium.JulianDate.secondsDifference(cities[i + 1].arrival, now);
 
       info.innerHTML = `
         🎅 Santa is in<br>
         <strong>${cities[i].name}</strong><br><br>
-        🎯 Next stop: <strong>${next.name}</strong><br>
+        🎯 Next stop: <strong>${cities[i + 1].name}</strong><br>
         ⏳ Arrival in: <strong>${formatCountdown(seconds)}</strong>
       `;
       break;
