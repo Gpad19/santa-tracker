@@ -28,17 +28,18 @@
       left: 12px;
       background: rgba(0, 0, 0, 0.65);
       color: white;
-      padding: 12px 16px;
-      border-radius: 10px;
+      padding: 14px 18px;
+      border-radius: 12px;
       font-family: system-ui, -apple-system;
       font-size: 14px;
       z-index: 10;
-      min-width: 220px;
+      min-width: 240px;
+      line-height: 1.5;
     }
 
     #zoomSanta {
       position: absolute;
-      top: 110px;
+      top: 140px;
       left: 12px;
       padding: 10px 14px;
       border-radius: 10px;
@@ -82,13 +83,13 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 viewer.scene.globe.enableLighting = true;
 
 /* =====================================
-   ⏰ Santa timeline
+   ⏰ Timeline
 ===================================== */
 const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T11:00:00Z");
 const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-25T11:00:00Z");
 
 /* =====================================
-   🏙 Cities
+   🏙 Cities (East → West)
 ===================================== */
 const cities = [
   { name: "North Pole", lon: -135, lat: 90, stop: 180 },
@@ -119,37 +120,32 @@ const cities = [
 ];
 
 /* =====================================
-   🧮 Timing
+   🧮 Timing math
 ===================================== */
 const totalSeconds =
   Cesium.JulianDate.secondsDifference(santaEnd, santaStart);
 
 const totalStopSeconds =
-  cities.reduce((sum, c) => sum + c.stop, 0);
+  cities.reduce((s, c) => s + c.stop, 0);
 
-const travelSeconds = totalSeconds - totalStopSeconds;
-const travelPerLeg = travelSeconds / (cities.length - 1);
+const travelPerLeg =
+  (totalSeconds - totalStopSeconds) / (cities.length - 1);
 
 /* =====================================
-   📍 Movement path (real flight arcs)
+   📍 Path
 ===================================== */
 const position = new Cesium.SampledPositionProperty();
-let currentTime = santaStart.clone();
+let t = santaStart.clone();
 const arcSamples = 64;
 
 cities.forEach((city, i) => {
-  city.arrival = currentTime.clone();
-  const cityPos = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000);
-  position.addSample(city.arrival, cityPos);
+  city.arrival = t.clone();
+  const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000);
+  position.addSample(city.arrival, p);
 
-  currentTime = Cesium.JulianDate.addSeconds(
-    currentTime,
-    city.stop,
-    new Cesium.JulianDate()
-  );
-
-  city.departure = currentTime.clone();
-  position.addSample(city.departure, cityPos);
+  t = Cesium.JulianDate.addSeconds(t, city.stop, new Cesium.JulianDate());
+  city.departure = t.clone();
+  position.addSample(city.departure, p);
 
   if (i < cities.length - 1) {
     const next = cities[i + 1];
@@ -161,30 +157,26 @@ cities.forEach((city, i) => {
     for (let j = 1; j <= arcSamples; j++) {
       const f = j / arcSamples;
       const c = geo.interpolateUsingFraction(f);
-      const height = 300000 + Math.sin(Math.PI * f) * 200000;
+      const h = 300000 + Math.sin(Math.PI * f) * 200000;
 
-      const sampleTime = Cesium.JulianDate.addSeconds(
+      const tt = Cesium.JulianDate.addSeconds(
         city.departure,
         travelPerLeg * f,
         new Cesium.JulianDate()
       );
 
       position.addSample(
-        sampleTime,
-        Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, height)
+        tt,
+        Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, h)
       );
     }
 
-    currentTime = Cesium.JulianDate.addSeconds(
-      currentTime,
-      travelPerLeg,
-      new Cesium.JulianDate()
-    );
+    t = Cesium.JulianDate.addSeconds(t, travelPerLeg, new Cesium.JulianDate());
   }
 });
 
 /* =====================================
-   🎅 Santa entity
+   🎅 Santa
 ===================================== */
 const santa = viewer.entities.add({
   availability: new Cesium.TimeIntervalCollection([
@@ -206,14 +198,22 @@ const santa = viewer.entities.add({
 viewer.trackedEntity = santa;
 
 /* =====================================
-   📢 Status text
+   📢 Status + Countdown
 ===================================== */
 const info = document.getElementById("info");
 
+function formatCountdown(seconds) {
+  seconds = Math.max(0, Math.floor(seconds));
+  const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
 viewer.clock.startTime = santaStart.clone();
 viewer.clock.stopTime = santaEnd.clone();
-viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
 viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
 
 viewer.clock.onTick.addEventListener(clock => {
   const now = clock.currentTime;
@@ -228,20 +228,34 @@ viewer.clock.onTick.addEventListener(clock => {
     return;
   }
 
-  for (let i = cities.length - 1; i >= 0; i--) {
-    if (Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now)) {
-      info.innerHTML = `🎅 Santa is in<br><strong>${cities[i].name}</strong>`;
+  for (let i = 0; i < cities.length; i++) {
+    if (
+      Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now) &&
+      (i === cities.length - 1 ||
+       Cesium.JulianDate.greaterThan(cities[i + 1].arrival, now))
+    ) {
+      const next = cities[i + 1];
+      if (next) {
+        const seconds =
+          Cesium.JulianDate.secondsDifference(next.arrival, now);
+
+        info.innerHTML = `
+          🎅 Santa is in<br>
+          <strong>${cities[i].name}</strong><br><br>
+          🎯 Next stop: <strong>${next.name}</strong><br>
+          ⏳ Arrival in: <strong>${formatCountdown(seconds)}</strong>
+        `;
+      }
       break;
     }
   }
 });
 
 /* =====================================
-   🎥 Zoom to Santa button
+   🎥 Zoom button
 ===================================== */
-document.getElementById("zoomSanta").addEventListener("click", () => {
-  const time = viewer.clock.currentTime;
-  const pos = santa.position.getValue(time);
+document.getElementById("zoomSanta").onclick = () => {
+  const pos = santa.position.getValue(viewer.clock.currentTime);
   if (!pos) return;
 
   viewer.camera.flyTo({
@@ -252,7 +266,7 @@ document.getElementById("zoomSanta").addEventListener("click", () => {
     ),
     duration: 2.5
   });
-});
+};
 
 /* =====================================
    🎥 Initial camera
