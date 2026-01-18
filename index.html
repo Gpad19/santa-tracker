@@ -4,16 +4,13 @@
   <meta charset="utf-8" />
   <title>Santa Tracker 🎅</title>
 
-  <!-- iPad / Mobile -->
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- Cesium -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
-  <link
-    href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css"
-    rel="stylesheet"
-  />
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css"
+        rel="stylesheet" />
 
   <style>
     html, body, #cesiumContainer {
@@ -47,25 +44,23 @@
 
 <script>
   // =====================================
-  // 🔑 Cesium ion Access Token (REQUIRED)
+  // 🔑 Cesium ion token
   // =====================================
   Cesium.Ion.defaultAccessToken =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
   // =====================================
-  // 🌍 Cesium Viewer
+  // 🌍 Viewer
   // =====================================
   const viewer = new Cesium.Viewer("cesiumContainer", {
     animation: true,
     timeline: true,
-    baseLayerPicker: false,
-    geocoder: false,
-    homeButton: false,
+    baseLayerPicker: true,
+    geocoder: true,
+    homeButton: true,
     sceneModePicker: true,
-    navigationHelpButton: false,
-    fullscreenButton: false,
-    infoBox: false,
-    selectionIndicator: false,
+    navigationHelpButton: true,
+    fullscreenButton: true,
     shouldAnimate: true
   });
 
@@ -74,13 +69,13 @@
   viewer.scene.maximumRenderTimeChange = Infinity;
 
   // =====================================
-  // ⏰ Santa global time window (UTC)
+  // ⏰ Global Santa timeline (UTC)
   // =====================================
   const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T00:00:00Z");
   const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-25T00:00:00Z");
 
   // =====================================
-  // 🏙 Cities (ordered) + stop duration (sec)
+  // 🏙 Cities + stop duration (seconds)
   // =====================================
   const cities = [
     { name: "North Pole", lon: -135, lat: 90, stop: 180 },
@@ -95,7 +90,7 @@
   ];
 
   // =====================================
-  // 🧮 Time calculations
+  // 🧮 Time math
   // =====================================
   const totalSeconds =
     Cesium.JulianDate.secondsDifference(santaEnd, santaStart);
@@ -107,35 +102,33 @@
   const travelPerLeg = travelSeconds / (cities.length - 1);
 
   // =====================================
-  // 📍 Build Santa path (arrive → stop → depart)
+  // 📍 Santa movement (arrive → stop → depart)
   // =====================================
   const position = new Cesium.SampledPositionProperty();
   let currentTime = santaStart.clone();
 
-  cities.forEach((city, index) => {
-    // ARRIVAL
+  cities.forEach((city, i) => {
     city.arrival = currentTime.clone();
+
     position.addSample(
       city.arrival,
       Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
     );
 
-    // STOP (pause)
     currentTime = Cesium.JulianDate.addSeconds(
       currentTime,
       city.stop,
       new Cesium.JulianDate()
     );
 
-    // DEPARTURE (same position, later time)
     city.departure = currentTime.clone();
+
     position.addSample(
       city.departure,
       Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
     );
 
-    // TRAVEL to next city
-    if (index < cities.length - 1) {
+    if (i < cities.length - 1) {
       currentTime = Cesium.JulianDate.addSeconds(
         currentTime,
         travelPerLeg,
@@ -156,51 +149,75 @@
     model: {
       uri: "https://cdn.jsdelivr.net/gh/AnalyticalGraphicsInc/cesium-assets@master/models/CesiumMan/Cesium_Man.glb",
       minimumPixelSize: 64
-    },
-    path: {
-      width: 3,
-      material: Cesium.Color.RED
     }
   });
 
   viewer.trackedEntity = santa;
 
   // =====================================
-  // 🕰 Real-time UTC clock sync
+  // 🌍 Great-circle flight arcs
   // =====================================
+  function createArc(from, to) {
+    const geodesic = new Cesium.EllipsoidGeodesic(
+      Cesium.Cartographic.fromDegrees(from.lon, from.lat),
+      Cesium.Cartographic.fromDegrees(to.lon, to.lat)
+    );
+
+    const points = [];
+    const steps = 64;
+
+    for (let i = 0; i <= steps; i++) {
+      const frac = i / steps;
+      const carto = geodesic.interpolateUsingFraction(frac);
+      points.push(
+        Cesium.Cartesian3.fromRadians(
+          carto.longitude,
+          carto.latitude,
+          300000 + Math.sin(Math.PI * frac) * 200000
+        )
+      );
+    }
+
+    viewer.entities.add({
+      polyline: {
+        positions: points,
+        width: 2,
+        material: new Cesium.PolylineGlowMaterialProperty({
+          glowPower: 0.2,
+          color: Cesium.Color.RED
+        })
+      }
+    });
+  }
+
+  for (let i = 0; i < cities.length - 1; i++) {
+    createArc(cities[i], cities[i + 1]);
+  }
+
+  // =====================================
+  // 📢 Status display
+  // =====================================
+  const info = document.getElementById("info");
+  let lastState = "";
+
   viewer.clock.startTime = santaStart.clone();
   viewer.clock.stopTime = santaEnd.clone();
   viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
 
-  // =====================================
-  // 📢 City detection + status display
-  // =====================================
-  const info = document.getElementById("info");
-  let lastState = "";
-
   viewer.clock.onTick.addEventListener(clock => {
     const now = clock.currentTime;
 
-    // Before departure
     if (Cesium.JulianDate.lessThan(now, santaStart)) {
-      if (lastState !== "PREP") {
-        lastState = "PREP";
-        info.innerHTML = "🎅 Preparing for departure…";
-      }
+      info.innerHTML = "🎅 Preparing for departure…";
       return;
     }
 
-    // After completion
     if (Cesium.JulianDate.greaterThan(now, santaEnd)) {
-      if (lastState !== "DONE") {
-        lastState = "DONE";
-        info.innerHTML = "🎄 Santa has completed deliveries!";
-      }
+      info.innerHTML = "🎄 Santa has completed deliveries!";
       return;
     }
 
-    // City arrival detection
     for (let i = cities.length - 1; i >= 0; i--) {
       if (Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now)) {
         if (lastState !== cities[i].name) {
