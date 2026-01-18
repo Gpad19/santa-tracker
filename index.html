@@ -35,12 +35,33 @@
       z-index: 10;
       min-width: 220px;
     }
+
+    #zoomSanta {
+      position: absolute;
+      top: 110px;
+      left: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255, 0, 0, 0.85);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    #zoomSanta:hover {
+      background: rgba(255, 0, 0, 1);
+    }
   </style>
 </head>
+
 <body>
 
 <div id="cesiumContainer"></div>
 <div id="info">🎅 Preparing for departure…</div>
+<button id="zoomSanta">🎅 Zoom to Santa</button>
 
 <script>
 /* =====================================
@@ -65,7 +86,6 @@ viewer.scene.globe.enableLighting = true;
 ===================================== */
 const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T11:00:00Z");
 const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-25T11:00:00Z");
-
 
 /* =====================================
    🏙 Cities
@@ -98,7 +118,6 @@ const cities = [
   { name: "North Pole", lon: -135, lat: 90, stop: 180 }
 ];
 
-
 /* =====================================
    🧮 Timing
 ===================================== */
@@ -112,33 +131,28 @@ const travelSeconds = totalSeconds - totalStopSeconds;
 const travelPerLeg = travelSeconds / (cities.length - 1);
 
 /* =====================================
-   📍 Movement path (with real flight arcs)
+   📍 Movement path (real flight arcs)
 ===================================== */
 const position = new Cesium.SampledPositionProperty();
 let currentTime = santaStart.clone();
 const arcSamples = 64;
 
 cities.forEach((city, i) => {
-  // Arrival
   city.arrival = currentTime.clone();
   const cityPos = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000);
   position.addSample(city.arrival, cityPos);
 
-  // Stop time
   currentTime = Cesium.JulianDate.addSeconds(
     currentTime,
     city.stop,
     new Cesium.JulianDate()
   );
 
-  // Departure
   city.departure = currentTime.clone();
   position.addSample(city.departure, cityPos);
 
-  // Flight to next city
   if (i < cities.length - 1) {
     const next = cities[i + 1];
-
     const geo = new Cesium.EllipsoidGeodesic(
       Cesium.Cartographic.fromDegrees(city.lon, city.lat),
       Cesium.Cartographic.fromDegrees(next.lon, next.lat)
@@ -147,9 +161,7 @@ cities.forEach((city, i) => {
     for (let j = 1; j <= arcSamples; j++) {
       const f = j / arcSamples;
       const c = geo.interpolateUsingFraction(f);
-
-      const height =
-        300000 + Math.sin(Math.PI * f) * 200000;
+      const height = 300000 + Math.sin(Math.PI * f) * 200000;
 
       const sampleTime = Cesium.JulianDate.addSeconds(
         city.departure,
@@ -159,11 +171,7 @@ cities.forEach((city, i) => {
 
       position.addSample(
         sampleTime,
-        Cesium.Cartesian3.fromRadians(
-          c.longitude,
-          c.latitude,
-          height
-        )
+        Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, height)
       );
     }
 
@@ -175,9 +183,8 @@ cities.forEach((city, i) => {
   }
 });
 
-
 /* =====================================
-   🔴 Santa (Red Dot – iPad Safe)
+   🎅 Santa entity
 ===================================== */
 const santa = viewer.entities.add({
   availability: new Cesium.TimeIntervalCollection([
@@ -197,44 +204,6 @@ const santa = viewer.entities.add({
 });
 
 viewer.trackedEntity = santa;
-
-/* =====================================
-   🌍 Flight arcs
-===================================== */
-function createArc(from, to) {
-  const geo = new Cesium.EllipsoidGeodesic(
-    Cesium.Cartographic.fromDegrees(from.lon, from.lat),
-    Cesium.Cartographic.fromDegrees(to.lon, to.lat)
-  );
-
-  const pts = [];
-  for (let i = 0; i <= 64; i++) {
-    const f = i / 64;
-    const c = geo.interpolateUsingFraction(f);
-    pts.push(
-      Cesium.Cartesian3.fromRadians(
-        c.longitude,
-        c.latitude,
-        300000 + Math.sin(Math.PI * f) * 200000
-      )
-    );
-  }
-
-  viewer.entities.add({
-    polyline: {
-      positions: pts,
-      width: 2,
-      material: new Cesium.PolylineGlowMaterialProperty({
-        glowPower: 0.2,
-        color: Cesium.Color.RED
-      })
-    }
-  });
-}
-
-for (let i = 0; i < cities.length - 1; i++) {
-  createArc(cities[i], cities[i + 1]);
-}
 
 /* =====================================
    📢 Status text
@@ -261,11 +230,28 @@ viewer.clock.onTick.addEventListener(clock => {
 
   for (let i = cities.length - 1; i >= 0; i--) {
     if (Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now)) {
-      info.innerHTML =
-        `🎅 Santa is in<br><strong>${cities[i].name}</strong>`;
+      info.innerHTML = `🎅 Santa is in<br><strong>${cities[i].name}</strong>`;
       break;
     }
   }
+});
+
+/* =====================================
+   🎥 Zoom to Santa button
+===================================== */
+document.getElementById("zoomSanta").addEventListener("click", () => {
+  const time = viewer.clock.currentTime;
+  const pos = santa.position.getValue(time);
+  if (!pos) return;
+
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.multiplyByScalar(
+      Cesium.Cartesian3.normalize(pos, new Cesium.Cartesian3()),
+      Cesium.Cartesian3.magnitude(pos) + 1_000_000,
+      new Cesium.Cartesian3()
+    ),
+    duration: 2.5
+  });
 });
 
 /* =====================================
