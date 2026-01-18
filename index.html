@@ -75,10 +75,11 @@ cities.forEach((city, i) => {
 viewer.entities.add({
   position,
   billboard: {
-    image: "https://upload.wikimedia.org/wikipedia/commons/5/50/Santa_Claus_icon.png",
-    scale: 0.15,
-    verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-  },
+  image: Cesium.buildModuleUrl("Widgets/Images/Maps/pin.png"),
+  scale: 1.2,
+  verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+}
+
   path: {
     width: 2,
     material: Cesium.Color.RED
