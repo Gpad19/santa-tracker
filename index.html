@@ -187,7 +187,7 @@ const arcSamples = 96;
 
 cities.forEach((city, i) => {
   city.arrival = t.clone();
-  const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 50000);
+  const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 30000);
   position.addSample(city.arrival, p);
 
   t = Cesium.JulianDate.addSeconds(t, city.stop, new Cesium.JulianDate());
@@ -204,7 +204,7 @@ cities.forEach((city, i) => {
     for (let j = 1; j <= arcSamples; j++) {
       const f = j / arcSamples;
       const c = geo.interpolateUsingFraction(f);
-      const h = 30000 + Math.sin(Math.PI * f) *20000;
+      const h = 30000 + Math.sin(Math.PI * f);
 
       const tt = Cesium.JulianDate.addSeconds(
         city.departure,
