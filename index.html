@@ -187,7 +187,7 @@ const arcSamples = 96;
 
 cities.forEach((city, i) => {
   city.arrival = t.clone();
-  const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 30000);
+  const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 50000);
   position.addSample(city.arrival, p);
 
   t = Cesium.JulianDate.addSeconds(t, city.stop, new Cesium.JulianDate());
