@@ -107,33 +107,61 @@ const travelSeconds = totalSeconds - totalStopSeconds;
 const travelPerLeg = travelSeconds / (cities.length - 1);
 
 /* =====================================
-   📍 Movement path
+   📍 Movement path (with real flight arcs)
 ===================================== */
 const position = new Cesium.SampledPositionProperty();
 let currentTime = santaStart.clone();
+const arcSamples = 64;
 
 cities.forEach((city, i) => {
+  // Arrival
   city.arrival = currentTime.clone();
+  const cityPos = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000);
+  position.addSample(city.arrival, cityPos);
 
-  position.addSample(
-    city.arrival,
-    Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
-  );
-
+  // Stop time
   currentTime = Cesium.JulianDate.addSeconds(
     currentTime,
     city.stop,
     new Cesium.JulianDate()
   );
 
+  // Departure
   city.departure = currentTime.clone();
+  position.addSample(city.departure, cityPos);
 
-  position.addSample(
-    city.departure,
-    Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
-  );
-
+  // Flight to next city
   if (i < cities.length - 1) {
+    const next = cities[i + 1];
+
+    const geo = new Cesium.EllipsoidGeodesic(
+      Cesium.Cartographic.fromDegrees(city.lon, city.lat),
+      Cesium.Cartographic.fromDegrees(next.lon, next.lat)
+    );
+
+    for (let j = 1; j <= arcSamples; j++) {
+      const f = j / arcSamples;
+      const c = geo.interpolateUsingFraction(f);
+
+      const height =
+        300000 + Math.sin(Math.PI * f) * 200000;
+
+      const sampleTime = Cesium.JulianDate.addSeconds(
+        city.departure,
+        travelPerLeg * f,
+        new Cesium.JulianDate()
+      );
+
+      position.addSample(
+        sampleTime,
+        Cesium.Cartesian3.fromRadians(
+          c.longitude,
+          c.latitude,
+          height
+        )
+      );
+    }
+
     currentTime = Cesium.JulianDate.addSeconds(
       currentTime,
       travelPerLeg,
@@ -141,6 +169,7 @@ cities.forEach((city, i) => {
     );
   }
 });
+
 
 /* =====================================
    🔴 Santa (Red Dot – iPad Safe)
