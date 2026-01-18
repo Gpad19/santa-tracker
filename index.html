@@ -183,7 +183,7 @@ const travelPerLeg =
 ===================================== */
 const position = new Cesium.SampledPositionProperty();
 let t = santaStart.clone();
-const arcSamples = 64;
+const arcSamples = 96;
 
 cities.forEach((city, i) => {
   city.arrival = t.clone();
@@ -204,7 +204,7 @@ cities.forEach((city, i) => {
     for (let j = 1; j <= arcSamples; j++) {
       const f = j / arcSamples;
       const c = geo.interpolateUsingFraction(f);
-      const h = 300000 + Math.sin(Math.PI * f) * 200000;
+      const h = 30000 + Math.sin(Math.PI * f) * 20000;
 
       const tt = Cesium.JulianDate.addSeconds(
         city.departure,
