@@ -1,93 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Santa Tracker (Baseline)</title>
+  <meta charset="utf-8" />
+  <title>Santa Tracker 🎅</title>
 
-<meta name="viewport"
-  content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-<script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
-<link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css"
-      rel="stylesheet" />
+  <!-- Cesium -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css"
+        rel="stylesheet" />
 
-<style>
-html, body, #cesiumContainer {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-}
-</style>
+  <style>
+    html, body, #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+
+    #info {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: system-ui, -apple-system;
+      font-size: 14px;
+      z-index: 10;
+      min-width: 220px;
+    }
+  </style>
 </head>
 <body>
 
 <div id="cesiumContainer"></div>
+<div id="info">🎅 Preparing for departure…</div>
 
 <script>
-/* ========= TOKEN ========= */
-Cesium.Ion.defaultAccessToken =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
+  // =====================================
+  // 🔑 Cesium ion token
+  // =====================================
+  Cesium.Ion.defaultAccessToken =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
-/* ========= VIEWER ========= */
-const viewer = new Cesium.Viewer("cesiumContainer", {
-  animation: true,
-  timeline: true
-});
+  // =====================================
+  // 🌍 Viewer
+  // =====================================
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+    animation: true,
+    timeline: true,
+    baseLayerPicker: true,
+    geocoder: true,
+    homeButton: true,
+    sceneModePicker: true,
+    navigationHelpButton: true,
+    fullscreenButton: true,
+    shouldAnimate: true
+  });
 
-viewer.scene.globe.enableLighting = true;
+  viewer.scene.globe.enableLighting = true;
+  viewer.scene.requestRenderMode = true;
+  viewer.scene.maximumRenderTimeChange = Infinity;
 
-/* ========= SIMPLE CITY LIST ========= */
-const cities = [
-  { name: "North Pole", lon: -135, lat: 90 },
-  { name: "New York", lon: -74, lat: 40.7 },
-  { name: "London", lon: -0.1, lat: 51.5 },
-  { name: "Tokyo", lon: 139.7, lat: 35.7 }
-];
+  // =====================================
+  // ⏰ Global Santa timeline (UTC)
+  // =====================================
+  const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T00:00:00Z");
+  const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-25T00:00:00Z");
 
-/* ========= TIME SETUP ========= */
-const start = Cesium.JulianDate.now();
-const stop  = Cesium.JulianDate.addSeconds(start, 60, new Cesium.JulianDate());
+  // =====================================
+  // 🏙 Cities + stop duration (seconds)
+  // =====================================
+  const cities = [
+    { name: "North Pole", lon: -135, lat: 90, stop: 180 },
+    { name: "Anchorage", lon: -149.9, lat: 61.2, stop: 120 },
+    { name: "New York", lon: -74.0, lat: 40.7, stop: 120 },
+    { name: "London", lon: -0.1, lat: 51.5, stop: 120 },
+    { name: "Paris", lon: 2.35, lat: 48.86, stop: 120 },
+    { name: "Dubai", lon: 55.27, lat: 25.2, stop: 120 },
+    { name: "Mumbai", lon: 72.87, lat: 19.07, stop: 120 },
+    { name: "Tokyo", lon: 139.7, lat: 35.7, stop: 120 },
+    { name: "Sydney", lon: 151.2, lat: -33.8, stop: 120 }
+  ];
 
-viewer.clock.startTime = start.clone();
-viewer.clock.stopTime = stop.clone();
-viewer.clock.currentTime = start.clone();
-viewer.clock.multiplier = 1;
-viewer.clock.shouldAnimate = true;
+  // =====================================
+  // 🧮 Time math
+  // =====================================
+  const totalSeconds =
+    Cesium.JulianDate.secondsDifference(santaEnd, santaStart);
 
-/* ========= PATH ========= */
-const position = new Cesium.SampledPositionProperty();
+  const totalStopSeconds =
+    cities.reduce((sum, c) => sum + c.stop, 0);
 
-cities.forEach((city, i) => {
-  const time = Cesium.JulianDate.addSeconds(
-    start,
-    i * (60 / (cities.length - 1)),
-    new Cesium.JulianDate()
-  );
+  const travelSeconds = totalSeconds - totalStopSeconds;
+  const travelPerLeg = travelSeconds / (cities.length - 1);
 
-  position.addSample(
-    time,
-    Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
-  );
-});
+  // =====================================
+  // 📍 Santa movement (arrive → stop → depart)
+  // =====================================
+  const position = new Cesium.SampledPositionProperty();
+  let currentTime = santaStart.clone();
 
-/* ========= SANTA ICON ========= */
-viewer.entities.add({
-  position,
-  billboard: {
-  image: Cesium.buildModuleUrl("Widgets/Images/Maps/pin.png"),
-  scale: 1.2,
-  verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-}
+  cities.forEach((city, i) => {
+    city.arrival = currentTime.clone();
 
-  path: {
-    width: 2,
-    material: Cesium.Color.RED
+    position.addSample(
+      city.arrival,
+      Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
+    );
+
+    currentTime = Cesium.JulianDate.addSeconds(
+      currentTime,
+      city.stop,
+      new Cesium.JulianDate()
+    );
+
+    city.departure = currentTime.clone();
+
+    position.addSample(
+      city.departure,
+      Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 300000)
+    );
+
+    if (i < cities.length - 1) {
+      currentTime = Cesium.JulianDate.addSeconds(
+        currentTime,
+        travelPerLeg,
+        new Cesium.JulianDate()
+      );
+    }
+  });
+
+  // =====================================
+  // 🎅 Santa entity
+  // =====================================
+  const santa = viewer.entities.add({
+    availability: new Cesium.TimeIntervalCollection([
+      new Cesium.TimeInterval({ start: santaStart, stop: santaEnd })
+    ]),
+    position,
+    orientation: new Cesium.VelocityOrientationProperty(position),
+    model: {
+      uri: "https://cdn.jsdelivr.net/gh/AnalyticalGraphicsInc/cesium-assets@master/models/CesiumMan/Cesium_Man.glb",
+      minimumPixelSize: 64
+    }
+  });
+
+  viewer.trackedEntity = santa;
+
+  // =====================================
+  // 🌍 Great-circle flight arcs
+  // =====================================
+  function createArc(from, to) {
+    const geodesic = new Cesium.EllipsoidGeodesic(
+      Cesium.Cartographic.fromDegrees(from.lon, from.lat),
+      Cesium.Cartographic.fromDegrees(to.lon, to.lat)
+    );
+
+    const points = [];
+    const steps = 64;
+
+    for (let i = 0; i <= steps; i++) {
+      const frac = i / steps;
+      const carto = geodesic.interpolateUsingFraction(frac);
+      points.push(
+        Cesium.Cartesian3.fromRadians(
+          carto.longitude,
+          carto.latitude,
+          300000 + Math.sin(Math.PI * frac) * 200000
+        )
+      );
+    }
+
+    viewer.entities.add({
+      polyline: {
+        positions: points,
+        width: 2,
+        material: new Cesium.PolylineGlowMaterialProperty({
+          glowPower: 0.2,
+          color: Cesium.Color.RED
+        })
+      }
+    });
   }
-});
 
-/* ========= CAMERA ========= */
-viewer.trackedEntity = viewer.entities.values[0];
+  for (let i = 0; i < cities.length - 1; i++) {
+    createArc(cities[i], cities[i + 1]);
+  }
+
+  // =====================================
+  // 📢 Status display
+  // =====================================
+  const info = document.getElementById("info");
+  let lastState = "";
+
+  viewer.clock.startTime = santaStart.clone();
+  viewer.clock.stopTime = santaEnd.clone();
+  viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
+  viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+
+  viewer.clock.onTick.addEventListener(clock => {
+    const now = clock.currentTime;
+
+    if (Cesium.JulianDate.lessThan(now, santaStart)) {
+      info.innerHTML = "🎅 Preparing for departure…";
+      return;
+    }
+
+    if (Cesium.JulianDate.greaterThan(now, santaEnd)) {
+      info.innerHTML = "🎄 Santa has completed deliveries!";
+      return;
+    }
+
+    for (let i = cities.length - 1; i >= 0; i--) {
+      if (Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now)) {
+        if (lastState !== cities[i].name) {
+          lastState = cities[i].name;
+          info.innerHTML =
+            `🎅 Santa is in<br><strong>${cities[i].name}</strong>`;
+        }
+        break;
+      }
+    }
+  });
+
+  // =====================================
+  // 🎥 Initial camera
+  // =====================================
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-135, 80, 3_000_000)
+  });
 </script>
 
 </body>
