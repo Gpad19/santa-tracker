@@ -80,10 +80,16 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
   shouldAnimate: true
 });
 
+// Disable atmospheric glow completely
+viewer.scene.skyAtmosphere.show = false;
+viewer.scene.globe.showGroundAtmosphere = false;
+
+// Disable HDR / bloom glow
+viewer.scene.highDynamicRange = false;
+viewer.scene.postProcessStages.bloom.enabled = false;
+
+// Keep Earth bright without glow
 viewer.scene.globe.enableLighting = false;
-viewer.scene.skyAtmosphere.brightnessShift = 0.0;
-viewer.scene.skyAtmosphere.hueShift = 0.0;
-viewer.scene.skyAtmosphere.saturationShift = 0.0;
 
 /* =====================================
    ⏰ Timeline
