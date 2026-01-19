@@ -80,7 +80,11 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
   shouldAnimate: true
 });
 
-viewer.scene.globe.enableLighting = true;
+/* 🌞 BRIGHT EARTH SETTINGS */
+viewer.scene.globe.enableLighting = false;
+viewer.scene.skyAtmosphere.brightnessShift = 0.4;
+viewer.scene.skyAtmosphere.hueShift = 0.0;
+viewer.scene.skyAtmosphere.saturationShift = 0.1;
 
 /* =====================================
    ⏰ Timeline
@@ -94,98 +98,30 @@ const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-24T15:34:00Z");
 const cities = [
   { name: "North Pole, Arctic", lon: -135, lat: 90, stop: 0 },
   { name: "Uelen, Russia", lon: -169.8098, lat: 66.1597, stop: 0 },
-  { name: "Lavrentiya, Russia", lon: -171.0000, lat: 65.5833, stop: 0 },
+  { name: "Lavrentiya, Russia", lon: -171.0, lat: 65.5833, stop: 0 },
   { name: "Anadyr, Russia", lon: 177.5167, lat: 64.7333, stop: 0 },
-  { name: "Magadan, Russia", lon: 150.8000, lat: 59.5667, stop: 0 },
-  { name: "Esso, Russia", lon: 158.7000, lat: 55.9333, stop: 0 },
-  { name: "Wake Island, U.S. Minor Outlying Islands", lon: 166.6470, lat: 19.2820, stop: 0 },
-  { name: "Majuro, Marshall Islands", lon: 171.3800, lat: 7.0900, stop: 0 },
-  { name: "Yaren, Nauru", lon: 166.9300, lat: -0.5500, stop: 0 },
-  { name: "Tarawa, Kiribati", lon: 172.9800, lat: 1.4500, stop: 0 },
-  { name: "Funafuti, Tuvalu", lon: 179.2000, lat: -8.5200, stop: 0 },
-  { name: "Taga, Samoa", lon: -172.5000, lat: -13.5000, stop: 0 },
-  { name: "Tongatapu, Tonga", lon: -175.2000, lat: -21.1300, stop: 0 },
-  { name: "Auckland, New Zealand", lon: 174.76, lat: -36.85, stop: 0 },
-  { name: "Gisborne, New Zealand", lon: 178.0170, lat: -38.6620, stop: 0 },
-  { name: "Christchurch, New Zealand", lon: 172.6362, lat: -43.5321, stop: 0 },
-  { name: "Chatham Islands, New Zealand", lon: -176.5500, lat: -43.9500, stop: 0 },
-  { name: "McMurdo Station, Antarctica", lon: 166.6680, lat: -77.8419, stop: 0 },
-  { name: "Wellington, New Zealand", lon: 174.78, lat: -41.29, stop: 0 },
-  { name: "Queenstown, New Zealand", lon: 168.6626, lat: -45.0312, stop: 0 },
-  { name: "Suva, Fiji", lon: 178.4501, lat: -18.1416, stop: 0 },
-  { name: "Noumea, New Caledonia", lon: 166.4580, lat: -22.2758, stop: 0 },
-  { name: "Vanuatu", lon: 168.3273, lat: -17.7333, stop: 0 }, // Port Vila
-  { name: "Honiara, Solomon Islands", lon: 159.9729, lat: -9.4456, stop: 0 },
-  { name: "Auki, Solomon Islands", lon: 160.6833, lat: -8.7670, stop: 0 },
-  { name: "Palikir, Federated States of Micronesia", lon: 158.1610, lat: 6.9178, stop: 0 },
-  { name: "Kirilsk, Kuril Islands", lon: 147.8833, lat: 45.2333, stop: 0 },
-  { name: "Nogliki, Russia", lon: 143.1667, lat: 51.8000, stop: 0 },
-  { name: "Yakutsk, Russia", lon: 129.7331, lat: 62.0355, stop: 0 },
-  { name: "Birobidzhan, Russia", lon: 132.9239, lat: 48.7948, stop: 0 },
-  { name: "Trudovoye, Russia", lon: 131.9800, lat: 43.2900, stop: 0 },
-  { name: "Arsenyev, Russia", lon: 133.2700, lat: 44.1600, stop: 0 },
-  { name: "Komsomolsk-on-Amur, Russia", lon: 137.0000, lat: 50.5500, stop: 0 },
-  { name: "Nevelsk, Sakhalin", lon: 141.8700, lat: 46.6800, stop: 0 },
-  { name: "San Vincente, Saipan, Northern Mariana Islands", lon: 145.7500, lat: 15.1660, stop: 0 },
-  { name: "Santa Rita, Guam", lon: 144.6720, lat: 13.3860, stop: 0 },
-  { name: "Kimbe, Papua New Guinea", lon: 150.1400, lat: -5.5500, stop: 0 },
-  { name: "Port Moresby, Papua New Guinea", lon: 147.1800, lat: -9.4400, stop: 0 },
-  { name: "Daru, Papua New Guinea", lon: 143.2100, lat: -9.0800, stop: 0 },
-  { name: "Cooktown, Australia", lon: 145.2500, lat: -15.4700, stop: 0 },
-  { name: "Rockhampton, Australia", lon: 150.5100, lat: -23.3800, stop: 0 },
-  { name: "Maryborough, Australia", lon: 152.7000, lat: -25.5400, stop: 0 },
-  { name: "Brisbane, Australia", lon: 153.0200, lat: -27.4700, stop: 0 },
-  { name: "Sydney, Australia", lon: 151.2100, lat: -33.8700, stop: 0 },
-  { name: "Canberra, Australia", lon: 149.1300, lat: -35.2800, stop: 0 },
-  { name: "Melbourne, Australia", lon: 144.9600, lat: -37.8100, stop: 0 },
-  { name: "Hobart, Tasmania", lon: 147.3300, lat: -42.8800, stop: 0 },
-  { name: "Adelaide, Australia", lon: 138.6000, lat: -34.9300, stop: 0 },
-  { name: "Alice Springs, Australia", lon: 133.8800, lat: -23.7000, stop: 0 },
-  { name: "Darwin, Australia", lon: 130.8400, lat: -12.4600, stop: 0 },
-  { name: "Dili, East Timor", lon: 125.5800, lat: -8.5600, stop: 0 },
-  { name: "Sorong, West Papua", lon: 131.2500, lat: -0.8600, stop: 0 },
-  { name: "Babeldaob, Palau", lon: 134.5600, lat: 7.5150, stop: 0 },
-  { name: "Iwo Jima, Japan", lon: 141.3220, lat: 24.7840, stop: 0 },
-  { name: "Sapporo, Japan", lon: 141.3545, lat: 43.0618, stop: 0 },
-  { name: "Tokyo, Japan", lon: 139.6917, lat: 35.6895, stop: 0 },
-  { name: "Kanazawa, Japan", lon: 136.6562, lat: 36.5613, stop: 0 },
-  { name: "Nagoya, Japan", lon: 136.9066, lat: 35.1815, stop: 0 },
-  { name: "Kyoto, Japan", lon: 135.7681, lat: 35.0116, stop: 0 },
-  { name: "Hiroshima, Japan", lon: 132.4553, lat: 34.3853, stop: 0 },
-  { name: "Shimonoseki, Japan", lon: 130.9460, lat: 33.9570, stop: 0 },
-  { name: "Nagasaki, Japan", lon: 129.8737, lat: 32.7503, stop: 0 },
-  { name: "Naha, Okinawa, Japan", lon: 127.6809, lat: 26.2124, stop: 0 },
-  { name: "Jeju City, South Korea", lon: 126.5312, lat: 33.4996, stop: 0 },
-  { name: "Busan, South Korea", lon: 129.0756, lat: 35.1796, stop: 0 },
-  { name: "Daejeon, South Korea", lon: 127.3845, lat: 36.3504, stop: 0 },
-  { name: "Seoul, South Korea", lon: 126.9780, lat: 37.5665, stop: 0 },
-  { name: "Pyongyang, North Korea", lon: 125.7625, lat: 39.0392, stop: 0 },
-  { name: "Shenyang, China", lon: 123.4315, lat: 41.8057, stop: 0 },
-  { name: "Harbin, China", lon: 126.5349, lat: 45.8038, stop: 0 },
-  { name: "Mudanjiang, China", lon: 129.6330, lat: 44.5830, stop: 0 },
-  { name: "Great Wall, China", lon: 116.5704, lat: 40.4319, stop: 0 }, // Badaling area
-  { name: "Beijing, China", lon: 116.4074, lat: 39.9042, stop: 0 },
-  { name: "Qingdao, China", lon: 120.3826, lat: 36.0671, stop: 0 },
-  { name: "Shanghai, China", lon: 121.4737, lat: 31.2304, stop: 0 },
-  { name: "Taipei, Taiwan", lon: 121.5654, lat: 25.0330, stop: 0 },
-  { name: "Davao City, Philippines", lon: 125.6128, lat: 7.1907, stop: 0 },
-  { name: "Manila, Philippines", lon: 120.9842, lat: 14.5995, stop: 0 },
-  { name: "Hong Kong", lon: 114.1694, lat: 22.3193, stop: 0 },
-  { name: "Guangzhou, China", lon: 113.2644, lat: 23.1291, stop: 0 },
-  { name: "Changsha, China", lon: 112.9388, lat: 28.2282, stop: 0 },
-  { name: "Xi’an, China", lon: 108.9398, lat: 34.3416, stop: 0 },
-  { name: "Chongqing, China", lon: 106.5516, lat: 29.5630, stop: 0 },
-  { name: "Chengdu, China", lon: 104.0665, lat: 30.5728, stop: 0 },
-  { name: "Kunming, China", lon: 102.7123, lat: 25.0406, stop: 0 },
-  { name: "Haikou, China", lon: 110.3312, lat: 20.0310, stop: 0 },
-  { name: "Bandar Seri Begawan, Brunei", lon: 114.9420, lat: 4.9031, stop: 0 },
-  { name: "Bintulu, Malaysia", lon: 113.0350, lat: 3.1660, stop: 0 },
-  { name: "Sampit, Indonesia", lon: 112.9500, lat: -2.5300, stop: 0 },
-  { name: "Broome, Australia", lon: 122.2359, lat: -17.9614, stop: 0 },
-  { name: "Newman, Australia", lon: 119.7350, lat: -23.3550, stop: 0 },
-  { name: "Perth, Australia", lon: 115.8605, lat: -31.9505, stop: 0 },
-  { name: "Geraldton, Australia", lon: 114.6128, lat: -28.7770, stop: 0 },
-  { name: "The Settlement, Christmas Island", lon: 105.6700, lat: -10.4870, stop: 0 },
+  { name: "Magadan, Russia", lon: 150.8, lat: 59.5667, stop: 0 },
+  { name: "Esso, Russia", lon: 158.7, lat: 55.9333, stop: 0 },
+  { name: "Wake Island", lon: 166.647, lat: 19.282, stop: 0 },
+  { name: "Majuro", lon: 171.38, lat: 7.09, stop: 0 },
+  { name: "Yaren, Nauru", lon: 166.93, lat: -0.55, stop: 0 },
+  { name: "Tarawa", lon: 172.98, lat: 1.45, stop: 0 },
+  { name: "Funafuti", lon: 179.2, lat: -8.52, stop: 0 },
+  { name: "Taga, Samoa", lon: -172.5, lat: -13.5, stop: 0 },
+  { name: "Tongatapu", lon: -175.2, lat: -21.13, stop: 0 },
+  { name: "Auckland", lon: 174.76, lat: -36.85, stop: 0 },
+  { name: "Gisborne", lon: 178.017, lat: -38.662, stop: 0 },
+  { name: "Christchurch", lon: 172.6362, lat: -43.5321, stop: 0 },
+  { name: "Chatham Islands", lon: -176.55, lat: -43.95, stop: 0 },
+  { name: "McMurdo Station", lon: 166.668, lat: -77.8419, stop: 0 },
+  { name: "Wellington", lon: 174.78, lat: -41.29, stop: 0 },
+  { name: "Queenstown", lon: 168.6626, lat: -45.0312, stop: 0 },
+  { name: "Suva", lon: 178.4501, lat: -18.1416, stop: 0 },
+  { name: "Noumea", lon: 166.458, lat: -22.2758, stop: 0 },
+  { name: "Port Vila, Vanuatu", lon: 168.3273, lat: -17.7333, stop: 0 },
+  { name: "Honiara", lon: 159.9729, lat: -9.4456, stop: 0 },
+  { name: "Auki", lon: 160.6833, lat: -8.767, stop: 0 },
+  { name: "Palikir", lon: 158.161, lat: 6.9178, stop: 0 },
   { name: "Return to North Pole", lon: -135, lat: 90, stop: 0 }
 ];
 
@@ -195,11 +131,8 @@ const cities = [
 const totalSeconds =
   Cesium.JulianDate.secondsDifference(santaEnd, santaStart);
 
-const totalStopSeconds =
-  cities.reduce((s, c) => s + c.stop, 0);
-
 const travelPerLeg =
-  (totalSeconds - totalStopSeconds) / (cities.length - 1);
+  totalSeconds / (cities.length - 1);
 
 /* =====================================
    📍 Movement path
@@ -213,10 +146,6 @@ cities.forEach((city, i) => {
   const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 80000);
   position.addSample(city.arrival, p);
 
-  t = Cesium.JulianDate.addSeconds(t, city.stop, new Cesium.JulianDate());
-  city.departure = t.clone();
-  position.addSample(city.departure, p);
-
   if (i < cities.length - 1) {
     const next = cities[i + 1];
     const geo = new Cesium.EllipsoidGeodesic(
@@ -227,10 +156,10 @@ cities.forEach((city, i) => {
     for (let j = 1; j <= arcSamples; j++) {
       const f = j / arcSamples;
       const c = geo.interpolateUsingFraction(f);
-      const h = 80000 + Math.sin(Math.PI * f);
+      const h = 80000 + Math.sin(Math.PI * f) * 30000;
 
       const tt = Cesium.JulianDate.addSeconds(
-        city.departure,
+        city.arrival,
         travelPerLeg * f,
         new Cesium.JulianDate()
       );
@@ -258,94 +187,10 @@ const santa = viewer.entities.add({
     color: Cesium.Color.RED,
     outlineColor: Cesium.Color.WHITE,
     outlineWidth: 2
-  },
-  path: {
-    show: false
   }
 });
 
 viewer.trackedEntity = santa;
-
-/* =====================================
-   📌 Visited markers
-===================================== */
-const visitedMarkers = [];
-
-/* =====================================
-   📢 Status + Countdown
-===================================== */
-const info = document.getElementById("info");
-
-function formatCountdown(seconds) {
-  seconds = Math.max(0, Math.floor(seconds));
-  const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
-  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
-  const s = String(seconds % 60).padStart(2, "0");
-  return `${h}:${m}:${s}`;
-}
-
-viewer.clock.startTime = santaStart.clone();
-viewer.clock.stopTime = santaEnd.clone();
-viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
-viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
-
-viewer.clock.onTick.addEventListener(clock => {
-  const now = clock.currentTime;
-
-  if (Cesium.JulianDate.lessThan(now, santaStart)) {
-    info.innerHTML = "🎅 Preparing for departure…";
-    return;
-  }
-
-  if (Cesium.JulianDate.greaterThan(now, santaEnd)) {
-    info.innerHTML = "🎄 Santa has completed deliveries!";
-    return;
-  }
-
-  for (let i = 0; i < cities.length - 1; i++) {
-    if (
-      Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now) &&
-      Cesium.JulianDate.greaterThan(cities[i + 1].arrival, now)
-    ) {
-      const currentCity = cities[i];
-      const next = cities[i + 1];
-      const seconds =
-        Cesium.JulianDate.secondsDifference(next.arrival, now);
-
-      info.innerHTML = `
-        🎅 Santa is in<br>
-        <strong>${currentCity.name}</strong><br><br>
-        🎯 Next stop: <strong>${next.name}</strong><br>
-        ⏳ Arrival in: <strong>${formatCountdown(seconds)}</strong>
-      `;
-
-      // Add visited marker if not already added
-      if (!visitedMarkers[i]) {
-        visitedMarkers[i] = viewer.entities.add({
-          name: currentCity.name,
-          position: Cesium.Cartesian3.fromDegrees(currentCity.lon, currentCity.lat, 0),
-          point: {
-            pixelSize: 12,
-            color: Cesium.Color.GREEN,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 2
-          },
-          label: {
-            text: currentCity.name,
-            font: "14px sans-serif",
-            fillColor: Cesium.Color.WHITE,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            outlineWidth: 2,
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            pixelOffset: new Cesium.Cartesian2(0, -15)
-          }
-        });
-      }
-
-      break;
-    }
-  }
-});
 
 /* =====================================
    🎥 Zoom button
