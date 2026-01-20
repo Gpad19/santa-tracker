@@ -360,7 +360,24 @@ viewer.clock.onTick.addEventListener(clock => {
    🎥 Zoom button
 ===================================== */
 document.getElementById("zoomSanta").onclick = () => {
-  viewer.trackedEntity = santa;
+  const time = viewer.clock.currentTime;
+  const santaPos = santa.position.getValue(time);
+
+  if (!santaPos) return;
+
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.add(
+      santaPos,
+      new Cesium.Cartesian3(0, 0, 200_000), // camera offset
+      new Cesium.Cartesian3()
+    ),
+    orientation: {
+      heading: viewer.camera.heading,
+      pitch: Cesium.Math.toRadians(-30),
+      roll: 0
+    },
+    duration: 1.5
+  });
 };
 
 /* =====================================
