@@ -62,14 +62,14 @@
 
 <div id="cesiumContainer"></div>
 <div id="info">🎅 Preparing for departure…</div>
-<button id="zoomSanta">🎅 Follow Santa</button>
+<button id="zoomSanta">🎅 Zoom to Santa</button>
 
 <script>
 /* =====================================
    🔑 Cesium ion token
 ===================================== */
 Cesium.Ion.defaultAccessToken =
-  "YOUR_TOKEN_HERE";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiZjEyOGQ2Mi1jMGUwLTRhNmMtYThhZi1lYTcyMzAwYWFiMDYiLCJpZCI6MTIxODQ5LCJpYXQiOjE2NzQxNjE4MDh9.-_OgfjufhglZ0BdQkgwdlNqABiJNfe61EzpscAFljBE";
 
 /* =====================================
    🌍 Viewer
@@ -80,17 +80,16 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
   shouldAnimate: true
 });
 
+// Disable atmospheric glow completely
 viewer.scene.skyAtmosphere.show = false;
 viewer.scene.globe.showGroundAtmosphere = false;
+
+// Disable HDR / bloom glow
 viewer.scene.highDynamicRange = false;
 viewer.scene.postProcessStages.bloom.enabled = false;
-viewer.scene.globe.enableLighting = false;
 
-/* =====================================
-   🎥 Follow camera state
-===================================== */
-let followSanta = false;
-const followOffset = new Cesium.Cartesian3(0, -250_000, 120_000);
+// Keep Earth bright without glow
+viewer.scene.globe.enableLighting = false;
 
 /* =====================================
    ⏰ Timeline
@@ -99,7 +98,7 @@ const santaStart = Cesium.JulianDate.fromIso8601("2026-12-24T11:00:00Z");
 const santaEnd   = Cesium.JulianDate.fromIso8601("2026-12-24T12:00:00Z");
 
 /* =====================================
-   🏙 Cities (UNCHANGED – ALL INCLUDED)
+   🏙 Cities
 ===================================== */
 const cities = [
   { name: "North Pole, Arctic", lon: -135, lat: 90, stop: 0 },
@@ -124,7 +123,7 @@ const cities = [
   { name: "Queenstown, New Zealand", lon: 168.6626, lat: -45.0312, stop: 0 },
   { name: "Suva, Fiji", lon: 178.4501, lat: -18.1416, stop: 0 },
   { name: "Noumea, New Caledonia", lon: 166.4580, lat: -22.2758, stop: 0 },
-  { name: "Vanuatu", lon: 168.3273, lat: -17.7333, stop: 0 },
+  { name: "Vanuatu", lon: 168.3273, lat: -17.7333, stop: 0 }, // Port Vila
   { name: "Honiara, Solomon Islands", lon: 159.9729, lat: -9.4456, stop: 0 },
   { name: "Auki, Solomon Islands", lon: 160.6833, lat: -8.7670, stop: 0 },
   { name: "Palikir, Federated States of Micronesia", lon: 158.1610, lat: 6.9178, stop: 0 },
@@ -173,7 +172,7 @@ const cities = [
   { name: "Shenyang, China", lon: 123.4315, lat: 41.8057, stop: 0 },
   { name: "Harbin, China", lon: 126.5349, lat: 45.8038, stop: 0 },
   { name: "Mudanjiang, China", lon: 129.6330, lat: 44.5830, stop: 0 },
-  { name: "Great Wall, China", lon: 116.5704, lat: 40.4319, stop: 0 },
+  { name: "Great Wall, China", lon: 116.5704, lat: 40.4319, stop: 0 }, // Badaling area
   { name: "Beijing, China", lon: 116.4074, lat: 39.9042, stop: 0 },
   { name: "Qingdao, China", lon: 120.3826, lat: 36.0671, stop: 0 },
   { name: "Shanghai, China", lon: 121.4737, lat: 31.2304, stop: 0 },
@@ -200,24 +199,57 @@ const cities = [
 ];
 
 /* =====================================
-   🧮 Timing & Path (UNCHANGED)
+   🧮 Timing
 ===================================== */
 const totalSeconds =
   Cesium.JulianDate.secondsDifference(santaEnd, santaStart);
 
-const travelPerLeg =
-  totalSeconds / (cities.length - 1);
+const totalStopSeconds =
+  cities.reduce((s, c) => s + c.stop, 0);
 
+const travelPerLeg =
+  (totalSeconds - totalStopSeconds) / (cities.length - 1);
+
+/* =====================================
+   📍 Movement path
+===================================== */
 const position = new Cesium.SampledPositionProperty();
 let t = santaStart.clone();
+const arcSamples = 96;
 
 cities.forEach((city, i) => {
-  position.addSample(
-    t,
-    Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 80_000)
-  );
+  city.arrival = t.clone();
+  const p = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 80000);
+  position.addSample(city.arrival, p);
+
+  t = Cesium.JulianDate.addSeconds(t, city.stop, new Cesium.JulianDate());
+  city.departure = t.clone();
+  position.addSample(city.departure, p);
 
   if (i < cities.length - 1) {
+    const next = cities[i + 1];
+    const geo = new Cesium.EllipsoidGeodesic(
+      Cesium.Cartographic.fromDegrees(city.lon, city.lat),
+      Cesium.Cartographic.fromDegrees(next.lon, next.lat)
+    );
+
+    for (let j = 1; j <= arcSamples; j++) {
+      const f = j / arcSamples;
+      const c = geo.interpolateUsingFraction(f);
+      const h = 80000 + Math.sin(Math.PI * f);
+
+      const tt = Cesium.JulianDate.addSeconds(
+        city.departure,
+        travelPerLeg * f,
+        new Cesium.JulianDate()
+      );
+
+      position.addSample(
+        tt,
+        Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, h)
+      );
+    }
+
     t = Cesium.JulianDate.addSeconds(t, travelPerLeg, new Cesium.JulianDate());
   }
 });
@@ -235,41 +267,100 @@ const santa = viewer.entities.add({
     color: Cesium.Color.RED,
     outlineColor: Cesium.Color.WHITE,
     outlineWidth: 2
+  },
+  path: {
+    show: false
+  }
+});
+
+viewer.trackedEntity = santa;
+
+/* =====================================
+   📌 Visited markers
+===================================== */
+const visitedMarkers = [];
+
+/* =====================================
+   📢 Status + Countdown
+===================================== */
+const info = document.getElementById("info");
+
+function formatCountdown(seconds) {
+  seconds = Math.max(0, Math.floor(seconds));
+  const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
+viewer.clock.startTime = santaStart.clone();
+viewer.clock.stopTime = santaEnd.clone();
+viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
+
+viewer.clock.onTick.addEventListener(clock => {
+  const now = clock.currentTime;
+
+  if (Cesium.JulianDate.lessThan(now, santaStart)) {
+    info.innerHTML = "🎅 Preparing for departure…";
+    return;
+  }
+
+  if (Cesium.JulianDate.greaterThan(now, santaEnd)) {
+    info.innerHTML = "🎄 Santa has completed deliveries!";
+    return;
+  }
+
+  for (let i = 0; i < cities.length - 1; i++) {
+    if (
+      Cesium.JulianDate.lessThanOrEquals(cities[i].arrival, now) &&
+      Cesium.JulianDate.greaterThan(cities[i + 1].arrival, now)
+    ) {
+      const currentCity = cities[i];
+      const next = cities[i + 1];
+      const seconds =
+        Cesium.JulianDate.secondsDifference(next.arrival, now);
+
+      info.innerHTML = `
+        🎅 Santa is in<br>
+        <strong>${currentCity.name}</strong><br><br>
+        🎯 Next stop: <strong>${next.name}</strong><br>
+        ⏳ Arrival in: <strong>${formatCountdown(seconds)}</strong>
+      `;
+
+      // Add visited marker if not already added
+      if (!visitedMarkers[i]) {
+        visitedMarkers[i] = viewer.entities.add({
+          name: currentCity.name,
+          position: Cesium.Cartesian3.fromDegrees(currentCity.lon, currentCity.lat, 0),
+          point: {
+            pixelSize: 12,
+            color: Cesium.Color.GREEN,
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 2
+          },
+          label: {
+            text: currentCity.name,
+            font: "14px sans-serif",
+            fillColor: Cesium.Color.WHITE,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            outlineWidth: 2,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -15)
+          }
+        });
+      }
+
+      break;
+    }
   }
 });
 
 /* =====================================
-   🎥 Follow camera logic
-===================================== */
-viewer.clock.onTick.addEventListener(() => {
-  if (!followSanta) return;
-
-  const santaPos = santa.position.getValue(viewer.clock.currentTime);
-  if (!santaPos) return;
-
-  const transform =
-    Cesium.Transforms.eastNorthUpToFixedFrame(santaPos);
-
-  const desiredPos =
-    Cesium.Matrix4.multiplyByPoint(
-      transform,
-      followOffset,
-      new Cesium.Cartesian3()
-    );
-
-  viewer.camera.position = Cesium.Cartesian3.lerp(
-    viewer.camera.position,
-    desiredPos,
-    0.06,
-    viewer.camera.position
-  );
-});
-
-/* =====================================
-   🎥 Button
+   🎥 Zoom button
 ===================================== */
 document.getElementById("zoomSanta").onclick = () => {
-  followSanta = true;
+  viewer.trackedEntity = santa;
 };
 
 /* =====================================
