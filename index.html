@@ -260,11 +260,9 @@ viewer.clock.onTick.addEventListener(() => {
   viewer.camera.position = Cesium.Cartesian3.lerp(
     viewer.camera.position,
     desiredPos,
-    0.08,
+    0.06,
     viewer.camera.position
   );
-
-  viewer.camera.lookAt(santaPos, Cesium.Cartesian3.ZERO);
 });
 
 /* =====================================
